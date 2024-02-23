@@ -8,15 +8,16 @@ module top #(
     input   ACLK,
     input   ARESETn,
     input   [2:0] USER,
+    input   [1:0] ID,
     input   [DATA_WIDTH-1:0] in_data,
     input   how_to_last,
     output  [DATA_WIDTH-1:0] out_data,
     output  [4:0][4:0][63:0] D_out
 );
 
-logic TKEEP;
-logic TSTRB;
-logic TID;
+logic [(DATA_WIDTH/8)-1:0] TKEEP;
+logic [(DATA_WIDTH/8)-1:0] TSTRB;
+logic [1:0] TID;
 logic TDEST;
 logic TVALID;
 logic TLAST;
@@ -35,6 +36,7 @@ Axi_Stream_Transmitter Axi_Stream_Transmitter_i(
     .in_data(in_data),
     .how_to_last(how_to_last),
     .USER(USER),
+    .ID(ID),
     .TKEEP(TKEEP),
     .TSTRB(TSTRB),
     .TID(TID),
@@ -76,7 +78,9 @@ AXI_reg AXI_reg_i(
     .ARESETn(ARESETn),
     .TVALID(VALID_reg),   //VALID_reg
     .data_in(p_Data), // out_data
-    .D_out(D_out)
+    .D_out(D_out),
+    .TLAST(TLAST),
+    .TID(TID)
 );
 
 endmodule

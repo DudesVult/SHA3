@@ -7,6 +7,8 @@ module AXI_reg #(
     input ACLK,
     input ARESETn,
     input TVALID,
+    input TLAST,
+    input [1:0] TID,
     input [DATA_WIDTH-1:0] data_in,
 
     output [4:0][4:0][63:0] D_out
@@ -16,20 +18,29 @@ logic [1599:0] D_reg;
 logic [7:0] cnt;
 
 always_ff @(posedge ACLK) begin
-    if (ARESETn == 1'b0)
-        D_reg <= 1600'b0;
-    else
-        if (TVALID == 1'b1)
+    if (ARESETn == 1'b1)
+        if (TVALID == 1'b1 && TLAST == 1'b0)
             cnt <= cnt + 1;
         else
             cnt <= -1;
-    //    if (cnt == 8'd101)
-    //        cnt = -1;
+//    if (cnt == 8'd101)
+//        cnt = -1;
+end
+
+always_ff @(posedge ACLK) begin
+    if (TLAST == 1'b1)
+        case (TID)
+        0:  D_reg[(1600-2*224)+8:(1600-2*224)] = 8'h8;
+        1:  D_reg[(1600-2*256)+8:(1600-2*256)] = 8'h8;
+        2:  D_reg[(1600-2*384)+8:(1600-2*384)] = 8'h8;
+        3:  D_reg[(1600-2*512)+8:(1600-2*512)] = 8'h8;
+        default: D_reg[(1600-2*256)+8:(1600-2*256)] = 8'h8;
+        endcase
 end
 
 generate
     for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
-        assign D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (cnt-1 == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i];
+        assign D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (ARESETn == 1'b0) ? {DATA_WIDTH{1'b0}} : ((cnt-1 == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]);
     end
 endgenerate
 

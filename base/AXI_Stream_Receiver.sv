@@ -11,7 +11,7 @@ module Axi_Stream_Receiver #(
 
   input [(DATA_WIDTH/8)-1:0] TKEEP,
   input [(DATA_WIDTH/8)-1:0] TSTRB,
-  input [ID_WIDTH-1:0] TID, // �?спользовать для загрузки в регистр?
+  input [1:0] TID, // �?спользовать для загрузки в регистр?
   input TDEST,
   input [2:0] TUSER, //[2:0] for byte_numbs
   

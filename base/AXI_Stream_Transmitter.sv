@@ -9,21 +9,19 @@ module Axi_Stream_Transmitter #(
   input  [DATA_WIDTH-1:0] in_data,
   input  how_to_last,
   input [2:0] USER,
-
-  output [(DATA_WIDTH/8)-1:0] TKEEP,
-  output [(DATA_WIDTH/8)-1:0] TSTRB,
-  output [ID_WIDTH-1:0] TID, // �?спользовать для загрузки в регистр?
-  output TDEST,
+  input [1:0] ID, 
+  
+  output logic [(DATA_WIDTH/8)-1:0] TKEEP,
+  output logic [(DATA_WIDTH/8)-1:0] TSTRB,
+  output logic TDEST,
   
   output logic [2:0] TUSER, //[2:0] for byte_numb
+  output logic [1:0] TID, // �?спользовать для загрузки в регистр?
   output logic  TVALID,
   output logic  TLAST,
   output logic  [DATA_WIDTH-1:0] TDATA,
   output logic 	[127:0] txstate
 );
-
-logic [DATA_WIDTH-1:0] data_reg;
-logic valid_reg;
 
 logic [1:0] state;
 
@@ -47,6 +45,10 @@ always_ff @(posedge ACLK or negedge ARESETn) begin
 			TVALID <= 1'b0;
 			TLAST <= 1'b0;
 			TUSER <= 3'b0;
+			TID <= 2'b0;
+			TKEEP <= (DATA_WIDTH/8)*{1'b0};
+			TSTRB <= (DATA_WIDTH/8)*{1'b0};
+			TDEST <= 1'b0;
 			state <= WAIT_READY;
 		end
 		WAIT_READY: begin
@@ -56,6 +58,7 @@ always_ff @(posedge ACLK or negedge ARESETn) begin
 		DATA_OUT: begin
 			TDATA <= in_data;
 			TUSER <= USER;
+			TID <= ID;
 			if (TREADY && ~how_to_last) state <= DATA_OUT;
 			else state <= TLAST_OUT;
 		end
@@ -67,7 +70,5 @@ always_ff @(posedge ACLK or negedge ARESETn) begin
           state <= IDLE;
 		endcase
 end
-
-assign out_data = data_reg;
 
 endmodule
