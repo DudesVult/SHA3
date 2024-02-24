@@ -15,7 +15,6 @@ module AXI_reg #(
     );
 
 logic [1599:0] D_reg;
-logic [1599:0] temp;
 logic [7:0] cnt;
 
 
