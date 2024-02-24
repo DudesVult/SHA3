@@ -7,7 +7,7 @@ module top #(
 (
     input   ACLK,
     input   ARESETn,
-    input   [2:0] USER,
+    input   [3:0] USER,
     input   [1:0] ID,
     input   [DATA_WIDTH-1:0] in_data,
     input   how_to_last,
@@ -22,7 +22,7 @@ logic [1:0] TID;
 logic TDEST;
 logic TVALID;
 logic TLAST;
-logic [2:0] TUSER;
+logic [3:0] TUSER;
 logic [DATA_WIDTH-1:0] TDATA;
 
 logic [DATA_WIDTH-1:0] p_Data;
@@ -68,19 +68,19 @@ Axi_Stream_Receiver Axi_Stream_Receiver_i (
     .VALID_reg(VALID_reg)
 );
 
-pad_16 UUT_pad_16 (
-    .ACLK(ACLK),
-    .TLAST(TLAST),
-    .TUSER(TUSER),
-    .din(out_data),
-    .dout(p_Data)
-);
+//pad_16 UUT_pad_16 (
+//    .ACLK(ACLK),
+//    .TLAST(TLAST),
+//    .TUSER(TUSER),
+//    .din(out_data),
+//    .dout(p_Data)
+//);
 
 AXI_reg AXI_reg_i(
     .ACLK(ACLK),
     .ARESETn(ARESETn),
     .TVALID(VALID_reg),   //VALID_reg
-    .data_in(p_Data), // out_data
+    .data_in(out_data), // out_data
     .D_out(D_out),
     .TLAST(TLAST),
     .TID(TID)

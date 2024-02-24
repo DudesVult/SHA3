@@ -19,7 +19,9 @@ logic [7:0] cnt;
 
 
 always_ff @(posedge ACLK) begin
-    if (ARESETn == 1'b1) 
+    if (ARESETn == 1'b0) 
+        cnt = 0;
+    else
         if (TVALID == 1'b1 && TLAST == 1'b0)
             cnt <= cnt + 1;
         else
@@ -48,7 +50,7 @@ end
 generate
     for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
         always @(negedge ACLK) begin
-            D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (ARESETn == 1'b0) ? '{1'b0} : ((cnt-1 == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]);
+            D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (ARESETn == 1'b0) ? '{1'b0} : ((cnt == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]); // cnt-1 if using padder
         end
     end
 endgenerate

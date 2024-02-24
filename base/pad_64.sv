@@ -1,11 +1,17 @@
 module pad_64 (
     input ACLK,
     input TLAST,
-    input [2:0] TUSER, // TUSER?
+    input [5:0] TUSER, // TUSER?
     input [63:0] din,
     output [63:0] dout );
 
 logic [63:0] d_reg;
+
+generate
+    for (genvar i = 0; i < 64; i++) begin
+        assign d_reg = (TLAST == 1'b1) ? {{60-i}*{1'b0}, 4'h6, din[i-1:0]}: din;
+    end
+endgenerate
 
 always @ (posedge(ACLK))
     case (TUSER)

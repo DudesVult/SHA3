@@ -13,7 +13,7 @@ module Axi_Stream_Receiver #(
   input [(DATA_WIDTH/8)-1:0] TSTRB,
   input [1:0] TID, // �?спользовать для загрузки в регистр?
   input TDEST,
-  input [2:0] TUSER, //[2:0] for byte_numbs
+  input [3:0] TUSER, //[2:0] for byte_numbs
   
   output logic TREADY,
   output logic [DATA_WIDTH-1:0] out_data,
@@ -22,7 +22,6 @@ module Axi_Stream_Receiver #(
 );
 
 logic [DATA_WIDTH-1:0] data_reg;
-logic VREG;
 
 logic [1:0] state;
 
@@ -44,6 +43,7 @@ always_ff @(posedge ACLK or negedge ARESETn) begin
 		case(state)
 		IDLE: begin
 			TREADY <= 1'b0;
+			VALID_reg <= 1'b0;
 			data_reg <= (DATA_WIDTH/8)*{1'b0};
 			if (ARESETn) state <= WAIT_INPUT_DATA;
 		end
@@ -54,7 +54,7 @@ always_ff @(posedge ACLK or negedge ARESETn) begin
 		end
 		LOAD_OUTPUT_DATA: begin
 			data_reg <= TDATA;
-			VREG <= TVALID;
+			VALID_reg <= TVALID;
 			if (TVALID && ~TLAST) state <= LOAD_OUTPUT_DATA;
 			else state <= WAIT_INPUT_DATA;
 			end
@@ -66,6 +66,5 @@ always_ff @(posedge ACLK or negedge ARESETn) begin
 end
 
 assign out_data = data_reg;
-assign VALID_reg = VREG;
 
 endmodule
