@@ -18,7 +18,7 @@ module Axi_Stream_Receiver #(
   output logic TREADY,
   output logic [DATA_WIDTH-1:0] out_data,
   output logic [127:0] txstate
-  ,output VALID_reg
+  ,output logic VALID_reg
 );
 
 logic [DATA_WIDTH-1:0] data_reg;
@@ -44,7 +44,8 @@ always_ff @(posedge ACLK or negedge ARESETn) begin
 		case(state)
 		IDLE: begin
 			TREADY <= 1'b0;
-			state <= WAIT_INPUT_DATA;
+			data_reg <= (DATA_WIDTH/8)*{1'b0};
+			if (ARESETn) state <= WAIT_INPUT_DATA;
 		end
 		WAIT_INPUT_DATA: begin
 			TREADY <= 1'b1;

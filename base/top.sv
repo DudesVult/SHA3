@@ -13,6 +13,7 @@ module top #(
     input   how_to_last,
     output  [DATA_WIDTH-1:0] out_data,
     output  [4:0][4:0][63:0] D_out
+    ,output logic VALID
 );
 
 logic [(DATA_WIDTH/8)-1:0] TKEEP;
@@ -28,6 +29,8 @@ logic [DATA_WIDTH-1:0] p_Data;
 
 logic [127:0] txstate_tx;
 logic [127:0] txstate_rx;
+
+assign VALID = TVALID;
 
 Axi_Stream_Transmitter Axi_Stream_Transmitter_i(
     .ACLK(ACLK),

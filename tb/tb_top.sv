@@ -6,6 +6,7 @@ logic ACLK;
 logic ARESETn;
 logic [2:0] USER;
 logic [1:0] ID;
+logic VALID;
 
 logic [15:0] in_data;
 logic how_to_last;
@@ -18,6 +19,7 @@ top UUT(
     .ARESETn(ARESETn),
     .USER(USER),
     .ID(ID),
+    .VALID(VALID),
     .in_data(in_data),
     .how_to_last(how_to_last),
     .out_data(out_data),
@@ -40,7 +42,7 @@ initial begin
 end
 
 always @(posedge ACLK) begin
-    if (ARESETn == 1'b1)
+    if (ARESETn == 1'b1 && VALID == 1'b1)
         in_data = in_data + 1;
         if (in_data == 16'd16)
             how_to_last = 1'b1;

@@ -24,6 +24,7 @@ module Axi_Stream_Transmitter #(
 );
 
 logic [1:0] state;
+logic [DATA_WIDTH-1:0] data_reg;
 
 localparam int 	IDLE  = 0,  WAIT_READY   = 1,	DATA_OUT   = 2, TLAST_OUT   = 3;
 
@@ -40,34 +41,36 @@ end
 always_ff @(posedge ACLK or negedge ARESETn) begin
 	if (~ARESETn) state <= IDLE;
 	else
+	   data_reg <= in_data;
 		case(state)
-		IDLE: begin
-			TVALID <= 1'b0;
-			TLAST <= 1'b0;
-			TUSER <= 3'b0;
-			TID <= 2'b0;
-			TKEEP <= (DATA_WIDTH/8)*{1'b0};
-			TSTRB <= (DATA_WIDTH/8)*{1'b0};
-			TDEST <= 1'b0;
-			state <= WAIT_READY;
-		end
-		WAIT_READY: begin
-			TVALID <= 1'b1;
-			if (TREADY) state <= DATA_OUT;
-		end
-		DATA_OUT: begin
-			TDATA <= in_data;
-			TUSER <= USER;
-			TID <= ID;
-			if (TREADY && ~how_to_last) state <= DATA_OUT;
-			else state <= TLAST_OUT;
-		end
-		TLAST_OUT: begin
-			TLAST <= 1'b1;
-			if (~how_to_last) state <= WAIT_READY;
-		end
-		default:
-          state <= IDLE;
+            IDLE: begin
+                TVALID <= 1'b0;
+                TLAST <= 1'b0;
+                TUSER <= 3'b0;
+                TID <= 2'b0;
+                TKEEP <= (DATA_WIDTH/8)*{1'b0};
+                TSTRB <= (DATA_WIDTH/8)*{1'b0};
+                TDEST <= 1'b0;
+                data_reg <= (DATA_WIDTH/8)*{1'b0};
+                if (ARESETn) state <= WAIT_READY;
+            end
+            WAIT_READY: begin
+                TVALID <= 1'b1;
+                if (TREADY) state <= DATA_OUT;
+            end
+            DATA_OUT: begin
+                TDATA <= data_reg;
+                TUSER <= USER;
+                TID <= ID;
+                if (TREADY && ~how_to_last) state <= DATA_OUT;
+                else state <= TLAST_OUT;
+            end
+            TLAST_OUT: begin
+                TLAST <= 1'b1;
+                if (~how_to_last) state <= WAIT_READY;
+            end
+            default:
+              state <= IDLE;
 		endcase
 end
 
