@@ -2,12 +2,13 @@ import io
 import binascii
 import math 
 
-Digest = 1600 # всего бит
+Digest = 1600
 c = []
-# SHA3_mode = 256 # больше не нужен
+bins = '1100'
+SHA3_mode = 256
 cnt = 0
-# WD = math.floor((2*SHA3_mode)/64)
-# const = math.floor((Digest-2*SHA3_mode)/64)
+WD = math.floor((2*SHA3_mode)/64)
+const = math.floor((Digest-2*SHA3_mode)/64)
 
 with io.open(f'Test.txt', encoding='utf-8') as file:
     for line in file:
@@ -23,15 +24,16 @@ def H2B(bins):
     
 #print(H2B(bins))
 
-input_string = c[0] # WTF?
+input_string = c[0]
 
 # Используем list comprehension для разделения строки на подстроки по 8 символов
 substrings = [input_string[i:i+16] for i in range(0, len(input_string), 16)]
 
-#print(int(WD-(2*SHA3_mode)/64))
 subcnt = len(substrings)
-steps = math.ceil(subcnt/const) # количество строк для каждого SHA3 (не актуально)
+steps = math.ceil(subcnt/const)
 
+last_substrings_len = len(substrings[subcnt-1])
+substrings[subcnt-1] = '06' + substrings[subcnt-1]
 substrings[subcnt-1] = substrings[subcnt-1].rjust(16, '0') #Дополнение нулями
 
 # Выводим полученные подстроки
