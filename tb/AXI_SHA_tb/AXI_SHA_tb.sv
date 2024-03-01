@@ -47,7 +47,7 @@ string  line_in, line_out;
 
 int i,j;
 
-wire   [0:4][0:4][WIDTH-1:0]  	Dout;
+wire   [0:4][0:4][63:0]  	Dout;
 
 AXI_SHA AXI_SHA_i(.*);
 
@@ -60,13 +60,12 @@ initial begin
     in_data = 16'd0;
     how_to_last = 1'b0;
     USER = 4'b0;
-    ID = 2'b1;
+    ID = 2'd0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
     SHA_valid = 1'b0;
     
     i = 8'b0;
 
     #50 ARESETn = 1'b1;
-    ID = 2'b0;
     USER = 4'd5;
 	in_data = 16'd6; // 16'd0
 	how_to_last = 1'b1;
@@ -100,8 +99,10 @@ initial begin
 end
 
 always @(posedge ACLK) begin
-	if(Ready == 1'b1 && how_to_last == 1'b1)
+	if(Ready == 1'b1 && how_to_last == 1'b1) begin
+       $display("Time to stop: ", $time);
 		print();
+    end
 end
 
 function logic [63:0] revers_byte(logic [63:0] data);

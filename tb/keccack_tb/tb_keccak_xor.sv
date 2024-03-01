@@ -110,8 +110,10 @@ initial begin
 end
 
 always @(posedge clk) begin
-	if(Ready == 1'b1 && Last_block == 1'b1)
+	if(Ready == 1'b1 && Last_block == 1'b1) begin
+//	   $display("Time to stop: ", $time);
 		print();
+		end
 end
 
 function logic [63:0] revers_byte(logic [63:0] data);
