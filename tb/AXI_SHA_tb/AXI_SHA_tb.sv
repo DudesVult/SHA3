@@ -37,6 +37,9 @@ logic [4:0][4:0][63:0] D_out;
 logic [7:0] i;
 
 logic SHA_valid;
+logic Mode;
+logic [WIDTH-1:0] Mode_out;
+logic Last;
 
 logic Ready;
 
@@ -45,7 +48,7 @@ localparam FILE_OUT      = "output.txt";
 integer file_in, file_out;
 string  line_in, line_out;
 
-int i,j;
+int j;
 
 wire   [0:4][0:4][63:0]  	Dout;
 
@@ -62,6 +65,7 @@ initial begin
     USER = 4'b0;
     ID = 2'd0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
     SHA_valid = 1'b0;
+	Mode = 1'b1;
     
     i = 8'b0;
 
@@ -99,7 +103,8 @@ initial begin
 end
 
 always @(posedge ACLK) begin
-	if(Ready == 1'b1 && how_to_last == 1'b1) begin
+//	if(Ready == 1'b1 && how_to_last == 1'b1) begin
+	if(Last == 1'b1 && how_to_last == 1'b1) begin
        $display("Time to stop: ", $time);
 		print();
     end

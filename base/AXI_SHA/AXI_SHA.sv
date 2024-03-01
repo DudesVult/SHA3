@@ -36,6 +36,9 @@ module AXI_SHA #(
     ,output logic VALID
     ,output Ready
     ,input SHA_valid
+    ,input Mode
+    ,output [DATA_WIDTH-1:0] Mode_out
+    ,output Last
 );
 
 logic [(DATA_WIDTH/8)-1:0] TKEEP;
@@ -56,6 +59,11 @@ logic [47:0] txstate;
 logic [4:0] cnt;
 
 logic [4:0][4:0][63:0] D_out;
+logic [4:0][4:0][63:0] D_reg;
+
+/*  SHA_Mode    */
+
+logic Ready;
 
 assign VALID = TVALID;
 
@@ -120,9 +128,40 @@ keccak_xor keccak_xor_i(
     .Din_valid(SHA_valid),
     .Last_block(TLAST),
     .Ready(Ready),
-    .Dout(Dout),
+    .Dout(D_reg),
     .cnt(cnt),
     .txstate(txstate)
 );
+
+SHA_mode SHA_mode_i(
+    .ACLK(ACLK),
+    .TID(TID), 
+    .Din(D_reg), 
+    .Ready(Ready),
+    .Mode(Mode),
+    .Dout(Mode_out),
+    .Last(Last)
+    ); 
+
+// Axi_Stream_Transmitter Axi_Stream_Transmitter_o(
+//     .ACLK(ACLK),
+//     .ARESETn(ARESETn),
+//     .TREADY(TREADY),
+//     .in_data(in_data),
+//     .how_to_last(how_to_last),
+//     .USER(USER),
+//     .ID(ID),
+//     .TKEEP(TKEEP),
+//     .TSTRB(TSTRB),
+//     .TID(TID),
+//     .TDEST(TDEST),
+//     .TUSER(TUSER),
+//     .TVALID(Ready),
+//     .TLAST(Last),
+//     .TDATA(Dout),
+//     .txstate(txstate_tx)  
+// );    
+
+assign Dout = D_reg;
 
 endmodule
