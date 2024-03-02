@@ -21,7 +21,8 @@
 
 
 module SHA_mode #(
-    parameter DATA_WIDTH = 16
+    parameter DATA_WIDTH = 16,
+    parameter [7:0] max_out = (1600/DATA_WIDTH)-1
 )
 (
     input ACLK,
@@ -38,7 +39,9 @@ module SHA_mode #(
    logic [1599:0] Dreg;
    logic [5:0] lite_lim;
    logic [63:0] rev; 
-
+   
+   logic reg_Last;
+      
 always_ff @(posedge ACLK) begin
     if (Ready == 1'b1)
         case (TID)
@@ -57,12 +60,16 @@ always_ff @(posedge ACLK) begin
     end
     else begin 
         if (Mode == 1'b1)
-            if (cnt == lite_lim-1)
+            if (cnt == lite_lim-1) 
                 Last = 1'b1;
+        if (Mode == 1'b0)
+            if (cnt == max_out)
+                Last = 1'b1;
+        if (reg_Last == 1'b0)
+            cnt = cnt + 1;
         else
-            if (cnt == 1600/DATA_WIDTH-1)
-                Last = 1'b1;
-        cnt = cnt + 1;
+            cnt = -1;
+        reg_Last = Last;
     end
 end
 

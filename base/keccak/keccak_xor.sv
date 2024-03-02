@@ -93,7 +93,7 @@ always @(posedge clk)
 				
             WAIT : begin
                       cnt_rnd               = 5'd0;
-                      reg_ready 			<= '0;				  
+                      reg_ready 			<= '1;				  
 				end
 
 	endcase
