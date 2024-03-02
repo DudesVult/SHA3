@@ -96,7 +96,7 @@ always @(posedge clk)
 end
 
 
-always @(posedge clk or negedge nrst)
+always @(posedge clk)
 	begin
 		case (state)
 			RST:	begin

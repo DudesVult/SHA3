@@ -37,7 +37,7 @@ always_ff @(state) begin
 	endcase
 end
 
-always_ff @(posedge ACLK or negedge ARESETn) begin
+always_ff @(posedge ACLK) begin
 	if (~ARESETn) state <= IDLE;
 	else
 		case(state)
