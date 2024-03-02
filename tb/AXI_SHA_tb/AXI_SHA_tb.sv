@@ -65,7 +65,7 @@ initial begin
     USER = 4'b0;
     ID = 2'd0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
     SHA_valid = 1'b0;
-	Mode = 1'b1;
+	Mode = 1'b0;
     
     i = 8'b0;
 
