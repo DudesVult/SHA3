@@ -83,6 +83,12 @@ initial begin
 	
 end
 	
+	
+always @(posedge ACLK) begin
+	if(Ready == 1'b1) begin
+	   SHA_valid = 1'b0;
+    end
+end
 
 // always @(posedge ACLK) begin
 //     if (ARESETn == 1'b1 && VALID == 1'b1)
