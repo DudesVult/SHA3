@@ -54,7 +54,7 @@ int j;
 
 wire   [0:4][0:4][63:0]  	Dout;
 
-logic [1599:0] D_result;
+logic [(1600/WIDTH)-1:0][WIDTH-1:0] D_result;
 logic [7:0] cnt;
 
 AXI_SHA AXI_SHA_i(.*);
@@ -86,6 +86,7 @@ initial begin
 	in_data = 16'd6; // 16'd0
 	how_to_last = 1'b1;
 	#50 SHA_valid = 1'b1;
+	#50 SHA_valid = 1'b0;
 end
 
 //// Конец симуляции
@@ -148,18 +149,36 @@ end
 
 //// Функция, которая будет ловить поток с АКС�? передатчика
 
+//always @(posedge ACLK) begin
+//    for(cnt = 0; cnt<(1600/WIDTH); cnt++) begin
+//        if (Ready == 1'b1 && Last == 1'b0) begin
+//            D_result [(WIDTH*cnt)-1:WIDTH*(cnt-1)] = Mode_out;
+//            cnt = cnt + 1;
+//        end
+//        if (Ready == 1'b1 &&  Last == 1'b1) begin
+//            D_result [(WIDTH*cnt)-1:WIDTH*(cnt-1)] = Mode_out;
+//            cnt = cnt + 1;
+//            $display("Result: %h", D_result);
+//            #20 $stop;
+//        end
+//    end
+//end
+//
+
+//// ������ ����
+
 always @(posedge ACLK) begin
-    for(cnt = 0; cnt<(1600/DATA_WIDTH); cnt++) begin
-	if (Ready == 1'b1 && Last == 1'b0) begin
-		D_result [(WIDTH*cnt)-1:WIDTH*(cnt-1)] = Mode_out;
-		cnt = cnt + 1;
-	end
-	if (Ready == 1'b1 &&  Last == 1'b1) begin
-		D_result [(WIDTH*cnt)-1:WIDTH*(cnt-1)] = Mode_out;
-		cnt = cnt + 1;
-		$display("Result: %h", D_result);
-		#20 $stop;
-	end
+    if (Ready == 1'b1 && Last == 1'b0) begin
+        cnt = cnt + 1;
+        D_result [cnt-4] = Mode_out;
+    end
+    if (Ready == 1'b1 &&  Last == 1'b1) begin
+        cnt = cnt + 1;
+        D_result [cnt-4] = Mode_out;
+        $display("Result: %h", D_result, $time);
+        $display("Result: %h%h%h%h", D_result [0], D_result [1], D_result [2], D_result [3]);
+        #20 $stop;
+    end
 end
 //
 
