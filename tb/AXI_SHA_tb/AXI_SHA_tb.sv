@@ -59,13 +59,16 @@ wire   [0:4][0:4][63:0]  	Dout;
 logic [(1600/WIDTH)-1:0][WIDTH-1:0] D_result;
 logic [7:0] cnt;
 
-logic [WIDTH-1:0] line;
+logic [15:0] line;
 
 int fd; // file descriptor
 
 AXI_SHA AXI_SHA_i(.*);
 
 int SHA;
+
+logic [4:0] cnt_data;
+logic [4:0] cnt_cd;
 
 always #5 ACLK = !ACLK;
 
@@ -84,10 +87,13 @@ initial begin
 	cnt = 8'b0;
     
     i = 8'b0;
+    cnt_data = 0;
+    cnt_cd = 0;
 
     // Открытие файла и проверка 
 
-    fd = $fopen("Copilot.bin","r");
+    // fd = $fopen("Copilot.bin","r");
+    fd = $fopen("1600.bin","r");
     if (fd) $display("Success :%d", fd);
     else    $display("Error :%d", fd);
 end
@@ -107,20 +113,28 @@ end
 // Добавить счетчик до какого момента можно отправлять, проверку когда заново считывать
 
 always @(posedge(ACLK)) begin
-    if (TREADY == 1'b1 && !$feof(fd)) begin
-        if (!$feof(fd)) begin
-            $fgets(line, fd);
-            $display("line : %h", line, $time);
-            in_data = line;
+    if(cnt_data < SHA/WIDTH)
+        if (TREADY == 1'b1 && !$feof(fd)) begin
+            if (!$feof(fd)) begin
+                line = 16'b0;
+                $fscanf(line, fd);
+                $display("line : %h", line, $time);
+                in_data = line;
+            end
+            if ($feof(fd)) begin
+                ID = 1'b1;
+                how_to_last = 1'b1;     // Добавить расчет last block заранее 
+                #50                     // TODO: починить костыль
+                ID = 1'b0;
+            end
+            cnt_data = cnt_data + 1;
+            cnt_cd = 0;
         end
-        if ($feof(fd)) begin
-            ID = 1'b1;
-            how_to_last = 1'b1;     // Добавить расчет last block заранее 
-            #50                     // TODO: починить костыль
-             ID = 1'b0;
-
-        end
-    end
+    else
+    if (cnt_cd < 25)
+        cnt_cd = cnt_cd + 1;
+    else
+        cnt_data = 0;
 end
 
 //// ������ ����
