@@ -29,6 +29,8 @@ logic [3:0] USER;
 logic [1:0] ID;
 logic VALID;
 
+logic TREADY;
+
 logic [15:0] in_data;
 logic how_to_last;
 
@@ -43,7 +45,7 @@ logic Last;
 
 logic Ready;
 
-localparam FILE_IN   = "Copilot.txt";
+localparam FILE_IN   = "Copilot.bin";
 localparam FILE_OUT      = "output.txt";
 
 integer result;
@@ -56,6 +58,10 @@ wire   [0:4][0:4][63:0]  	Dout;
 
 logic [(1600/WIDTH)-1:0][WIDTH-1:0] D_result;
 logic [7:0] cnt;
+
+logic [WIDTH-1:0] line;
+
+int fd; // file descriptor
 
 AXI_SHA AXI_SHA_i(.*);
 
@@ -76,6 +82,12 @@ initial begin
 	cnt = 8'b0;
     
     i = 8'b0;
+
+    // Открытие файла и проверка 
+
+    fd = $fopen("Copilot.bin","r");
+    if (fd) $display("Success :%d", fd);
+    else    $display("Error :%d", fd);
 end
 
 //// Хэш от 0
@@ -83,21 +95,31 @@ end
 initial begin
     #50 ARESETn = 1'b1;
     USER = 4'd5;
-	in_data = 16'd6; // 16'd0
-	how_to_last = 1'b1;
-	#50 SHA_valid = 1'b1;
-	#50 SHA_valid = 1'b0;
+//	 in_data = 16'd6; // 16'd0
+//	 how_to_last = 1'b1;
+//	 #50 SHA_valid = 1'b1;
+//	 #50 SHA_valid = 1'b0;
 end
 
-//// Конец симуляции
-	
-// always @(posedge ACLK) begin
-// 	//	if(Ready == 1'b1 && how_to_last == 1'b1) begin
-// 		if(Last == 1'b1 && how_to_last == 1'b1) begin
-// 		   $display("Time to stop: ", $time);
-// 			print();
-// 		end
-// 	end
+//Чтение бинарного файла
+
+always @(posedge(ACLK)) begin
+    if (TREADY == 1'b1 && !$feof(fd)) begin
+        if (!$feof(fd)) begin
+            $fgets(line, fd);
+            $display("line : %h", line, $time);
+            in_data = line;
+        end
+        if ($feof(fd)) begin
+            how_to_last = 1'b1;     // Добавить расчет last block заранее 
+            #50                     // TODO: починить костыль
+            SHA_valid = 1'b1;
+            #20
+            SHA_valid = 1'b0;
+        end
+    end
+end
+
 
 //// После расчета последнего сообщения переводит SHA в режим хранения
 	
@@ -118,36 +140,7 @@ end
 // 	end
 // end
 
-
-// Работа с файлом
-
-// initial begin
-
-// 	result  = $fscanf(file_in, "%s\n", line_in);
-
-// 	while(line_in != ".") begin
-// //		result      = $sscanf(line_in, "%h", 	); // Что-то не нравится в этих строках
-// 		// $display("$sscanf : ", result);
-// //		result      = $fscanf(file_in, "%s\n", line_in);
-// 		// $display("$sscanf : ", result);
-// 		SHA_valid = 1;			
-// 		repeat (1) @(negedge ACLK);		// Чтобы не было loop
-// 	if(Last) begin
-// 		print();
-// 	end
-
-// 	$fwrite(file_out,"-\n"); // Записываю в файл
-
-// 	result  = $fscanf(file_in, "%s\n", line_in);
-// 	SHA_valid = 0;
-// 	end
-
-// 	$fclose(file_in);
-// 	$fclose(file_out);
-// 	$stop;
-// end
-
-//// Функция, которая будет ловить поток с АКС�? передатчика
+//// Функция, которая будет ловить поток с АКС�? передатчика
 
 //always @(posedge ACLK) begin
 //    for(cnt = 0; cnt<(1600/WIDTH); cnt++) begin
@@ -165,7 +158,7 @@ end
 //end
 //
 
-//// ������ ����
+//// ������ ����
 
 always @(posedge ACLK) begin
     if (Ready == 1'b1 && Last == 1'b0) begin
@@ -177,12 +170,13 @@ always @(posedge ACLK) begin
         D_result [cnt-4] = Mode_out;
         $display("Result: %h", D_result, $time);
         $display("Result: %h%h%h%h", D_result [0], D_result [1], D_result [2], D_result [3]);
+        // print();
         #20 $stop;
     end
 end
 //
 
-// ��������������� ��
+// ��������������� ��
 
 //always @(posedge ACLK) begin
 //	if (Ready == 1'b1 && Last == 1'b0) begin
@@ -217,7 +211,7 @@ task print;
 	file_out = $fopen(FILE_OUT, "w");
 	$display("Hash from function: %h%h%h%h", revers_byte(Dout[0][0]), revers_byte(Dout[1][0]), revers_byte(Dout[2][0]), revers_byte(Dout[3][0]));
 	$display("%h%h%h%h", revers_byte(Dout[4][0]), revers_byte(Dout[0][1]), revers_byte(Dout[1][1]), revers_byte(Dout[2][1]));
-	$sformat(line_out, "%h%h%h%h[31:0]", revers_byte(Dout[0][0]), revers_byte(Dout[1][0]), revers_byte(Dout[2][0]), revers_byte(Dout[3][0]));
+	$sformat(line_out, "%h%h%h%h", revers_byte(Dout[0][0]), revers_byte(Dout[1][0]), revers_byte(Dout[2][0]), revers_byte(Dout[3][0]));
 	$fwrite(file_out, "%s\n", line_out);
 	$fclose(file_out);
 	# 10 $stop;

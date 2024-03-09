@@ -39,6 +39,7 @@ module AXI_SHA #(
     ,input Mode
     ,output [DATA_WIDTH-1:0] Mode_out
     ,output Last
+    ,output TREADY
 );
 
 logic [(DATA_WIDTH/8)-1:0] TKEEP;
@@ -63,7 +64,7 @@ logic [4:0][4:0][63:0] D_reg;
 
 /*  SHA_Mode    */
 
-logic Ready;
+//logic Ready;
 
 assign VALID = TVALID;
 
