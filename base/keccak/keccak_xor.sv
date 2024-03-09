@@ -31,10 +31,10 @@ always @(state) begin
 	case(state)
 		RST		:	txstate = "RST";
 		INIT_D	:	txstate = "INIT_D";
-		PROC		:	txstate = "PROC";
+		PROC	:	txstate = "PROC";
 		XOR		:	txstate = "XOR";
 		OUT		:	txstate = "OUT";
-		WAIT		:	txstate = "WAIT";
+		WAIT	:	txstate = "WAIT";
 		//WAIT state? 
 	endcase
 end
@@ -62,38 +62,38 @@ always @(posedge clk)
 		case (state)
 			RST:	  begin
 				  cnt_rnd               = 5'd0;
-				  reg_ready 				<= '0;
+				  reg_ready 			<= '0;
 				end
 
 			INIT_D:	  begin
 				  cnt_rnd               = 5'd0;
-				  reg_data 					<= Din;
+				  reg_data 				<= Din;
 				end
 
 			PROC:	  begin
-				  cnt_rnd       			<= cnt_rnd + 1;
+				  cnt_rnd       		<= cnt_rnd + 1;
 				  reg_data              <= RND_OUT;
-				  reg_out					<= reg_data;
+				  reg_out				<= reg_data;
 				  if (cnt_rnd == 23)
-						XOR_REG <= RND_OUT;
+					XOR_REG 			<= RND_OUT;
 				end
 
 			XOR: begin
-					  Xin						<= Din;
-					  Xout					<=	XOR_REG;
-					  reg_data 				<= D;
-					  cnt_rnd            <= 5'd0;
+					  Xin				<= Din;
+					  Xout				<= XOR_REG;
+					  reg_data 			<= D;
+					  cnt_rnd           <= 5'd0;
 				end
 
 			OUT: begin
-					  reg_out				<=	XOR_REG;
-					  reg_ready 			<= '1;
-					  cnt_rnd              <= 5'd0;					  
+					  reg_out			<=	XOR_REG;
+					  reg_ready 		<= '1;
+					  cnt_rnd           <= 5'd0;					  
 				end
 				
             WAIT : begin
-                      cnt_rnd               = 5'd0;
-                      reg_ready 			<= '1;				  
+                      cnt_rnd           <= 5'd0;
+                      reg_ready 		<= '1;				  
 				end
 
 	endcase

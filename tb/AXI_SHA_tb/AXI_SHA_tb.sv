@@ -25,8 +25,8 @@ localparam WIDTH = 16;
 
 logic ACLK;
 logic ARESETn;
-logic [3:0] USER;
-logic [1:0] ID;
+logic [1:0] USER;
+logic ID;
 logic VALID;
 
 logic TREADY;
@@ -38,7 +38,7 @@ logic [15:0] out_data;
 logic [4:0][4:0][63:0] D_out;
 logic [7:0] i;
 
-logic SHA_valid;
+// logic SHA_valid;
 logic Mode;
 logic [WIDTH-1:0] Mode_out;
 logic Last;
@@ -65,6 +65,8 @@ int fd; // file descriptor
 
 AXI_SHA AXI_SHA_i(.*);
 
+int SHA;
+
 always #5 ACLK = !ACLK;
 
 // Начальные значения
@@ -75,9 +77,9 @@ initial begin
     ARESETn = 1'b0;
     in_data = 16'd0;
     how_to_last = 1'b0;
-    USER = 4'b0;		// Еще используется? Мб перенести ID сюда 
-    ID = 2'd0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
-    SHA_valid = 1'b0;
+    USER = 2'b0;		// Еще используется? Мб перенести ID сюда 
+    ID = 1'b0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
+    // SHA_valid = 1'b0;
 	Mode = 1'b0;
 	cnt = 8'b0;
     
@@ -94,7 +96,7 @@ end
 
 initial begin
     #50 ARESETn = 1'b1;
-    USER = 4'd5;
+    USER = 2'd0;
 //	 in_data = 16'd6; // 16'd0
 //	 how_to_last = 1'b1;
 //	 #50 SHA_valid = 1'b1;
@@ -102,6 +104,7 @@ initial begin
 end
 
 //Чтение бинарного файла
+// Добавить счетчик до какого момента можно отправлять, проверку когда заново считывать
 
 always @(posedge(ACLK)) begin
     if (TREADY == 1'b1 && !$feof(fd)) begin
@@ -111,15 +114,49 @@ always @(posedge(ACLK)) begin
             in_data = line;
         end
         if ($feof(fd)) begin
+            ID = 1'b1;
             how_to_last = 1'b1;     // Добавить расчет last block заранее 
             #50                     // TODO: починить костыль
-            SHA_valid = 1'b1;
-            #20
-            SHA_valid = 1'b0;
+             ID = 1'b0;
+
         end
     end
 end
 
+//// ������ ����
+
+always @(posedge ACLK) begin
+    if (Ready == 1'b1 && Last == 1'b0) begin
+        cnt = cnt + 1;
+        D_result [cnt-4] = Mode_out;
+    end
+    if (Ready == 1'b1 &&  Last == 1'b1) begin
+        cnt = cnt + 1;
+        D_result [cnt-4] = Mode_out;
+        print_2;
+        #20 $stop;
+    end
+end
+//
+
+// Вывод нужного количества SHA
+
+initial begin
+    case(USER)
+        0 : SHA = 224;
+        1 : SHA = 256;
+        2 : SHA = 384;
+        3 : SHA = 512;
+        default : SHA = 256;
+    endcase
+end
+
+task print_2;
+    $display("Result: %h", D_result [i]);
+    for (int i = 0; i<SHA/WIDTH; i++) begin
+        $display("%h", D_result [i]);
+    end
+endtask
 
 //// После расчета последнего сообщения переводит SHA в режим хранения
 	
@@ -156,24 +193,6 @@ end
 //        end
 //    end
 //end
-//
-
-//// ������ ����
-
-always @(posedge ACLK) begin
-    if (Ready == 1'b1 && Last == 1'b0) begin
-        cnt = cnt + 1;
-        D_result [cnt-4] = Mode_out;
-    end
-    if (Ready == 1'b1 &&  Last == 1'b1) begin
-        cnt = cnt + 1;
-        D_result [cnt-4] = Mode_out;
-        $display("Result: %h", D_result, $time);
-        $display("Result: %h%h%h%h", D_result [0], D_result [1], D_result [2], D_result [3]);
-        // print();
-        #20 $stop;
-    end
-end
 //
 
 // ��������������� ��

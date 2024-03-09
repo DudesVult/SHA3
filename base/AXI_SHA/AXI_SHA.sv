@@ -1,24 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 29.02.2024 20:42:36
-// Design Name: 
-// Module Name: AXI_SHA
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module AXI_SHA #(
 	parameter DATA_WIDTH = 16,
@@ -35,7 +15,7 @@ module AXI_SHA #(
     output  [4:0][4:0][63:0] Dout
     ,output logic VALID
     ,output Ready
-    ,input SHA_valid
+    // ,input SHA_valid
     ,input Mode
     ,output [DATA_WIDTH-1:0] Mode_out
     ,output Last
@@ -44,11 +24,11 @@ module AXI_SHA #(
 
 logic [(DATA_WIDTH/8)-1:0] TKEEP;
 logic [(DATA_WIDTH/8)-1:0] TSTRB;
-logic [1:0] TID;
+logic TID;
 logic TDEST;
 logic TVALID;
 logic TLAST;
-logic [3:0] TUSER;
+logic [1:0] TUSER;
 logic [DATA_WIDTH-1:0] TDATA;
 
 logic [DATA_WIDTH-1:0] p_Data;
@@ -61,6 +41,8 @@ logic [4:0] cnt;
 
 logic [4:0][4:0][63:0] D_out;
 logic [4:0][4:0][63:0] D_reg;
+
+logic SHA_valid;
 
 /*  SHA_Mode    */
 
@@ -120,6 +102,8 @@ AXI_reg AXI_reg_i(
     .D_out(D_out),
     .TLAST(TLAST),
     .TID(TID)
+    ,.TUSER(TUSER)
+    ,.VALID(SHA_valid)
 );
 
 keccak_xor keccak_xor_i(
@@ -136,7 +120,7 @@ keccak_xor keccak_xor_i(
 
 SHA_mode SHA_mode_i(
     .ACLK(ACLK),
-    .TID(TID), 
+    .TUSER(TUSER), 
     .Din(D_reg), 
     .Ready(Ready),
     .Mode(Mode),

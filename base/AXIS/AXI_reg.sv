@@ -8,15 +8,19 @@ module AXI_reg #(
     input ARESETn,
     input TVALID,
     input TLAST,
-    input [1:0] TID,
+    input TID,
+    input [1:0] TUSER,
     input [DATA_WIDTH-1:0] data_in,
 
     output [0:4][0:4][63:0] D_out
+    ,output logic VALID
     );
 
 logic [1599:0] D_reg;
 logic [7:0] cnt;
 
+always_ff @(posedge ACLK)
+    VALID <= TID; 
 
 always_ff @(posedge ACLK) begin
     if (ARESETn == 1'b0) 
@@ -24,15 +28,17 @@ always_ff @(posedge ACLK) begin
     else
         if (TVALID == 1'b1 && TLAST == 1'b0)
             cnt <= cnt + 1;
-        else
+        else begin
             cnt <= -1;
+
+        end
 //    if (cnt == 8'd101)
 //        cnt = -1;
 end
 
 always_ff @(posedge ACLK) begin
     if (TLAST == 1'b1)
-        case (TID)
+        case (TUSER)
         0:  D_reg[(1600-2*224):(1600-2*224)-4] = 4'h8;
         1:  D_reg[(1600-2*256)-64:(1600-2*256)-68] = 4'h8;
         2:  D_reg[(1600-2*384):(1600-2*384)-4] = 4'h8;
@@ -43,7 +49,7 @@ end
 
 //always_ff @(posedge ACLK) begin
 //    if (TLAST == 1'b1)
-//        case (TID)
+//        case (TUSER)
 //        0:  D_reg[(1600-2*224):(1600-2*224)-4] = 4'h8;
 //        1:  D_reg[(1600-2*256):(1600-2*256)-4] = 4'h8;
 //        2:  D_reg[(1600-2*384):(1600-2*384)-4] = 4'h8;

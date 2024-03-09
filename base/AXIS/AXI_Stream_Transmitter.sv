@@ -8,15 +8,15 @@ module Axi_Stream_Transmitter #(
   input  TREADY,
   input  [DATA_WIDTH-1:0] in_data,
   input  how_to_last,
-  input [3:0] USER,
-  input [1:0] ID, 
+  input  [1:0] USER,
+  input  ID, 
   
   output logic [(DATA_WIDTH/8)-1:0] TKEEP,
   output logic [(DATA_WIDTH/8)-1:0] TSTRB,
   output logic TDEST,
   
-  output logic [3:0] TUSER, //[2:0] for byte_numb
-  output logic [1:0] TID, // �?спользовать для загрузки в регистр?
+  output logic  [1:0] TUSER, //[2:0] for byte_numb
+  output logic  TID, // �?спользовать для загрузки в регистр?
   output logic  TVALID,
   output logic  TLAST,
   output logic  [DATA_WIDTH-1:0] TDATA,
@@ -46,8 +46,8 @@ always_ff @(posedge ACLK) begin
             IDLE: begin
                 TVALID <= 1'b0;
                 TLAST <= 1'b0;
-                TUSER <= 3'b0;
-                TID <= 2'b0;
+                TUSER <= 2'b0;
+                TID   <= 1'b0;
                 TKEEP <= '{1'b0};
                 TSTRB <= '{1'b0};
                 TDEST <= 1'b0;
@@ -68,6 +68,7 @@ always_ff @(posedge ACLK) begin
             end
             TLAST_OUT: begin
                 TLAST <= 1'b1;
+                TID <= ID;
                 if (~how_to_last) state <= WAIT_READY;
             end
             default:

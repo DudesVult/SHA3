@@ -1,24 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 01.03.2024 17:14:38
-// Design Name: 
-// Module Name: SHA_mode
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module SHA_mode #(
     parameter DATA_WIDTH = 16,
@@ -26,7 +6,7 @@ module SHA_mode #(
 )
 (
     input ACLK,
-    input [1:0] TID,
+    input [1:0] TUSER,
     input [4:0][4:0][63:0] Din,
     input Ready,
     input Mode,
@@ -44,7 +24,7 @@ module SHA_mode #(
       
 always_ff @(posedge ACLK) begin
     if (Ready == 1'b1)
-        case (TID)
+        case (TUSER)
         0:  lite_lim = 224/DATA_WIDTH;
         1:  lite_lim = 256/DATA_WIDTH;
         2:  lite_lim = 384/DATA_WIDTH;

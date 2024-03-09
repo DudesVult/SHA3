@@ -11,9 +11,9 @@ module Axi_Stream_Receiver #(
 
   input [(DATA_WIDTH/8)-1:0] TKEEP,
   input [(DATA_WIDTH/8)-1:0] TSTRB,
-  input [1:0] TID, // �?спользовать для загрузки в регистр?
+  input TID, // valid для SHA
   input TDEST,
-  input [3:0] TUSER, //[2:0] for byte_numbs
+  input [1:0] TUSER, // тип SHA
   
   output logic TREADY,
   output logic [DATA_WIDTH-1:0] out_data,
