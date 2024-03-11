@@ -17,9 +17,16 @@ module AXI_SHA #(
     ,output Ready
     // ,input SHA_valid
     ,input Mode
-    ,output [DATA_WIDTH-1:0] Mode_out
     ,output Last
     ,output TREADY
+    ,output [1:0] TID_o
+    ,output [3:0] TUSER_o
+    ,output TKEEP_o
+    ,output TSTRB_o
+    ,output TDEST_o
+    ,output TVALID_o
+    ,output TLAST_o
+    ,output [DATA_WIDTH-1:0] TDATA_o
 );
 
 logic [(DATA_WIDTH/8)-1:0] TKEEP;
@@ -35,6 +42,7 @@ logic [DATA_WIDTH-1:0] p_Data;
 
 logic [127:0] txstate_tx;
 logic [127:0] txstate_rx;
+logic [127:0] txstate_tx_0;
 logic [47:0] txstate;
 
 logic [4:0] cnt;
@@ -43,6 +51,8 @@ logic [4:0][4:0][63:0] D_out;
 logic [4:0][4:0][63:0] D_reg;
 
 logic SHA_valid;
+
+logic [DATA_WIDTH-1:0] Mode_out;
 
 /*  SHA_Mode    */
 
@@ -128,24 +138,24 @@ SHA_mode SHA_mode_i(
     .Last(Last)
     ); 
 
-// Axi_Stream_Transmitter Axi_Stream_Transmitter_o(
-//     .ACLK(ACLK),
-//     .ARESETn(ARESETn),
-//     .TREADY(TREADY),
-//     .in_data(in_data),
-//     .how_to_last(how_to_last),
-//     .USER(USER),
-//     .ID(ID),
-//     .TKEEP(TKEEP),
-//     .TSTRB(TSTRB),
-//     .TID(TID),
-//     .TDEST(TDEST),
-//     .TUSER(TUSER),
-//     .TVALID(Ready),
-//     .TLAST(Last),
-//     .TDATA(Dout),
-//     .txstate(txstate_tx)  
-// );    
+Axi_Stream_Transmitter Axi_Stream_Transmitter_o(
+    .ACLK(ACLK),
+    .ARESETn(ARESETn),
+    .TREADY(TREADY),
+    .in_data(Mode_out),
+    .how_to_last(Last),
+    .USER(TUSER),
+    .ID(TID),
+    .TKEEP(TKEEP_o),
+    .TSTRB(TSTRB_o),
+    .TID(TID_o),
+    .TDEST(TDEST_o),
+    .TUSER(TUSER_o),
+    .TVALID(TVALID_o),
+    .TLAST(TLAST_o),
+    .TDATA(TDATA_o)
+    ,.txstate(txstate_tx_0)  
+);    
 
 assign Dout = D_reg;
 

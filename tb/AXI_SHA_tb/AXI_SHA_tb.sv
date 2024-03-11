@@ -40,7 +40,6 @@ logic [7:0] i;
 
 // logic SHA_valid;
 logic Mode;
-logic [WIDTH-1:0] Mode_out;
 logic Last;
 
 logic Ready;
@@ -70,6 +69,15 @@ int SHA;
 logic [4:0] cnt_data;
 logic [4:0] cnt_cd;
 
+logic [1:0] TID_o;
+logic [3:0] TUSER_o;
+logic TKEEP_o;
+logic TSTRB_o;
+logic TDEST_o;
+logic TVALID_o;
+logic TLAST_o;
+logic [WIDTH-1:0] TDATA_o;
+
 always #5 ACLK = !ACLK;
 
 // Начальные значения
@@ -92,8 +100,8 @@ initial begin
 
     // Открытие файла и проверка 
 
-    // fd = $fopen("Copilot.bin","r");
-    fd = $fopen("1600.bin","r");
+    fd = $fopen("Copilot.bin","r");
+    // fd = $fopen("1600.bin","r");
     if (fd) $display("Success :%d", fd);
     else    $display("Error :%d", fd);
 end
@@ -112,41 +120,61 @@ end
 //Чтение бинарного файла
 // Добавить счетчик до какого момента можно отправлять, проверку когда заново считывать
 
+// Рабочий вариант
+
 always @(posedge(ACLK)) begin
-    if(cnt_data < SHA/WIDTH)
-        if (TREADY == 1'b1 && !$feof(fd)) begin
-            if (!$feof(fd)) begin
-                line = 16'b0;
-                $fscanf(line, fd);
-                $display("line : %h", line, $time);
-                in_data = line;
-            end
-            if ($feof(fd)) begin
-                ID = 1'b1;
-                how_to_last = 1'b1;     // Добавить расчет last block заранее 
-                #50                     // TODO: починить костыль
-                ID = 1'b0;
-            end
-            cnt_data = cnt_data + 1;
-            cnt_cd = 0;
+    if (TREADY == 1'b1 && !$feof(fd)) begin
+        if (!$feof(fd)) begin
+            $fgets(line, fd);
+            $display("line : %h", line, $time);
+            in_data = line;
         end
-    else
-    if (cnt_cd < 25)
-        cnt_cd = cnt_cd + 1;
-    else
-        cnt_data = 0;
+        if ($feof(fd)) begin
+            ID = 1'b1;
+            how_to_last = 1'b1;     // Добавить расчет last block заранее 
+            #50                     // TODO: починить костыль
+            ID = 1'b0;
+        end
+    end
 end
+
+// экспериментальный
+
+// always @(posedge(ACLK)) begin
+//     if(cnt_data < SHA/WIDTH)
+//         if (TREADY == 1'b1 && !$feof(fd)) begin
+//             if (!$feof(fd)) begin
+//                 line = 16'b0;
+//                 $fscanf(line, fd);
+//                 $display("line : %h", line, $time);
+//                 in_data = line;
+//             end
+//             if ($feof(fd)) begin
+//                 ID = 1'b1;
+//                 how_to_last = 1'b1;     // Добавить расчет last block заранее 
+//                 #50                     // TODO: починить костыль
+//                 ID = 1'b0;
+//             end
+//             cnt_data = cnt_data + 1;
+//             cnt_cd = 0;
+//         end
+//     else
+//     if (cnt_cd < 25)
+//         cnt_cd = cnt_cd + 1;
+//     else
+//         cnt_data = 0;
+// end
 
 //// ������ ����
 
 always @(posedge ACLK) begin
-    if (Ready == 1'b1 && Last == 1'b0) begin
+    if (Ready == 1'b1 && TLAST_o == 1'b0) begin
         cnt = cnt + 1;
-        D_result [cnt-4] = Mode_out;
+        D_result [cnt-5] = TDATA_o;
     end
-    if (Ready == 1'b1 &&  Last == 1'b1) begin
+    if (Ready == 1'b1 &&  TLAST_o == 1'b1) begin
         cnt = cnt + 1;
-        D_result [cnt-4] = Mode_out;
+        D_result [cnt-5] = TDATA_o;
         print_2;
         #20 $stop;
     end
