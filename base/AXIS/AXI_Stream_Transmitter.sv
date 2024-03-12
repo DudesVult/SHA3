@@ -6,6 +6,7 @@ module Axi_Stream_Transmitter #(
   input  ACLK,
   input  ARESETn,
   input  TREADY,
+  input  VALID,
   input  [DATA_WIDTH-1:0] in_data,
   input  how_to_last,
   input  [1:0] USER,
@@ -56,13 +57,14 @@ always_ff @(posedge ACLK) begin
                 if (ARESETn) state <= WAIT_READY;
             end
             WAIT_READY: begin
-                TVALID <= 1'b1;
+                TVALID <= VALID;
                 if (TREADY) state <= DATA_OUT;
             end
             DATA_OUT: begin
                 TDATA <= data_reg;
                 TUSER <= USER;
                 TID <= ID;
+                TVALID <= VALID;
                 if (TREADY && ~how_to_last) state <= DATA_OUT;
                 else state <= TLAST_OUT;
             end

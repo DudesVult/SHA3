@@ -12,6 +12,7 @@ module SHA_mode #(
     input Mode,
     output logic [DATA_WIDTH-1:0] Dout,
     output logic Last 
+    ,output logic VALID
 //    ,output logic Valid_mode
     );
 
@@ -113,5 +114,8 @@ endgenerate
 //assign  Dreg [1471:1408]   = Din [0][2];
 //assign  Dreg [1535:1472]   = Din [0][1];
 //assign  Dreg [1599:1536]   = Din [0][0];
+
+always_ff @(posedge ACLK)
+    VALID <= Ready;
 
 endmodule

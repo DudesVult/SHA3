@@ -27,7 +27,7 @@ logic ACLK;
 logic ARESETn;
 logic [1:0] USER;
 logic ID;
-logic VALID;
+logic VALID_i;
 
 logic TREADY;
 
@@ -86,6 +86,7 @@ initial begin
 
     ACLK = 1'b1;
     ARESETn = 1'b0;
+    VALID_i = 1'b1;
     in_data = 16'd0;
     how_to_last = 1'b0;
     USER = 2'b0;		// Еще используется? Мб перенести ID сюда 
@@ -168,13 +169,13 @@ end
 //// ������ ����
 
 always @(posedge ACLK) begin
-    if (Ready == 1'b1 && TLAST_o == 1'b0) begin
+    if (TVALID_o == 1'b1 && TLAST_o == 1'b0) begin
         cnt = cnt + 1;
-        D_result [cnt-5] = TDATA_o;
+        D_result [cnt-3] = TDATA_o;
     end
-    if (Ready == 1'b1 &&  TLAST_o == 1'b1) begin
+    if (TVALID_o == 1'b1 &&  TLAST_o == 1'b1) begin
         cnt = cnt + 1;
-        D_result [cnt-5] = TDATA_o;
+        D_result [cnt-3] = TDATA_o;
         print_2;
         #20 $stop;
     end
@@ -194,10 +195,14 @@ initial begin
 end
 
 task print_2;
+    file_out = $fopen(FILE_OUT, "w");
     $display("Result: %h", D_result [i]);
     for (int i = 0; i<SHA/WIDTH; i++) begin
         $display("%h", D_result [i]);
+        $sformat(line_out, "%h", D_result [i]);
+        $fwrite(file_out, "%s\n", line_out);
     end
+    $fclose(file_out);
 endtask
 
 //// После расчета последнего сообщения переводит SHA в режим хранения
@@ -269,12 +274,12 @@ endfunction
 // Функция для вывода правильного хэша в терминал
 
 task print;
-	file_out = $fopen(FILE_OUT, "w");
+	// file_out = $fopen(FILE_OUT, "w");
 	$display("Hash from function: %h%h%h%h", revers_byte(Dout[0][0]), revers_byte(Dout[1][0]), revers_byte(Dout[2][0]), revers_byte(Dout[3][0]));
 	$display("%h%h%h%h", revers_byte(Dout[4][0]), revers_byte(Dout[0][1]), revers_byte(Dout[1][1]), revers_byte(Dout[2][1]));
 	$sformat(line_out, "%h%h%h%h", revers_byte(Dout[0][0]), revers_byte(Dout[1][0]), revers_byte(Dout[2][0]), revers_byte(Dout[3][0]));
-	$fwrite(file_out, "%s\n", line_out);
-	$fclose(file_out);
+	// $fwrite(file_out, "%s\n", line_out);
+	// $fclose(file_out);
 	# 10 $stop;
 endtask
 	

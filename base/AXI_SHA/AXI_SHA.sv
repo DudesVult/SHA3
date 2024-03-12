@@ -11,9 +11,10 @@ module AXI_SHA #(
     input   [1:0] ID,
     input   [DATA_WIDTH-1:0] in_data,
     input   how_to_last,
+    input   VALID_i,
     output  [DATA_WIDTH-1:0] out_data,
     output  [4:0][4:0][63:0] Dout
-    ,output logic VALID
+    // ,output logic VALID
     ,output Ready
     // ,input SHA_valid
     ,input Mode
@@ -54,16 +55,19 @@ logic SHA_valid;
 
 logic [DATA_WIDTH-1:0] Mode_out;
 
+logic VALID;
+
 /*  SHA_Mode    */
 
 //logic Ready;
 
-assign VALID = TVALID;
+// assign VALID = TVALID;
 
 Axi_Stream_Transmitter Axi_Stream_Transmitter_i(
     .ACLK(ACLK),
     .ARESETn(ARESETn),
     .TREADY(TREADY),
+    .VALID(VALID_i),
     .in_data(in_data),
     .how_to_last(how_to_last),
     .USER(USER),
@@ -136,12 +140,14 @@ SHA_mode SHA_mode_i(
     .Mode(Mode),
     .Dout(Mode_out),
     .Last(Last)
+    ,.VALID(VALID)
     ); 
 
 Axi_Stream_Transmitter Axi_Stream_Transmitter_o(
     .ACLK(ACLK),
     .ARESETn(ARESETn),
     .TREADY(TREADY),
+    .VALID(VALID),
     .in_data(Mode_out),
     .how_to_last(Last),
     .USER(TUSER),
