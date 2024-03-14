@@ -56,6 +56,7 @@ int j;
 wire   [0:4][0:4][63:0]  	Dout;
 
 logic [(1600/WIDTH)-1:0][WIDTH-1:0] D_result;
+logic [1599-1:0] Dres;
 logic [7:0] cnt;
 
 logic [15:0] line;
@@ -78,6 +79,9 @@ logic TVALID_o;
 logic TLAST_o;
 logic [WIDTH-1:0] TDATA_o;
 
+bit [WIDTH-1:0] queue [$];
+int queue_length;
+
 always #5 ACLK = !ACLK;
 
 // Начальные значения
@@ -92,7 +96,7 @@ initial begin
     USER = 2'b0;		// Еще используется? Мб перенести ID сюда 
     ID = 1'b0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
     // SHA_valid = 1'b0;
-	Mode = 1'b0;
+	Mode = 1'b1;
 	cnt = 8'b0;
     
     i = 8'b0;
@@ -101,8 +105,9 @@ initial begin
 
     // Открытие файла и проверка 
 
-    fd = $fopen("Copilot.bin","r");
-    // fd = $fopen("1600.bin","r");
+//    fd = $fopen("Copilot.bin","r");
+    fd = $fopen("1600.bin","r");
+//    fd = $fopen("order.bin","r");
     if (fd) $display("Success :%d", fd);
     else    $display("Error :%d", fd);
 end
@@ -118,55 +123,88 @@ initial begin
 //	 #50 SHA_valid = 1'b0;
 end
 
+initial begin
+logic [15:0] data;
+automatic byte unsigned byte_data[2];
+    while (!$feof(fd)) begin
+        byte_data[0] = $fgetc(fd); // Читаем старший байт
+        byte_data[1] = $fgetc(fd); // Читаем младший байт
+        data = {byte_data[0], byte_data[1]}; // Соединяем байты в 16-битное значение
+        queue.push_back(data); // Записываем данные в очередь
+        $display("Я дурак, который не видит конец файла", $time);
+    end
+    $fclose(fd);
+    queue_length = queue.size();
+end
+
 //Чтение бинарного файла
 // Добавить счетчик до какого момента можно отправлять, проверку когда заново считывать
 
 // Рабочий вариант
 
-always @(posedge(ACLK)) begin
-    if (TREADY == 1'b1 && !$feof(fd)) begin
-        if (!$feof(fd)) begin
-            $fgets(line, fd);
-            $display("line : %h", line, $time);
-            in_data = line;
-        end
-        if ($feof(fd)) begin
-            ID = 1'b1;
-            how_to_last = 1'b1;     // Добавить расчет last block заранее 
-            #50                     // TODO: починить костыль
-            ID = 1'b0;
-        end
-    end
-end
+// always @(posedge(ACLK)) begin
+//     if (TREADY == 1'b1 && !$feof(fd)) begin
+//         if (!$feof(fd)) begin
+//             $fgets(line, fd);
+//             $display("line : %h", line, $time);
+//             in_data = line;
+//         end
+//         if ($feof(fd)) begin
+//             ID = 1'b1;
+//             how_to_last = 1'b1;     // Добавить расчет last block заранее 
+//             #50                     // TODO: починить костыль
+//             ID = 1'b0;
+//         end
+//     end
+// end
 
 // экспериментальный
 
-// always @(posedge(ACLK)) begin
-//     if(cnt_data < SHA/WIDTH)
-//         if (TREADY == 1'b1 && !$feof(fd)) begin
-//             if (!$feof(fd)) begin
-//                 line = 16'b0;
-//                 $fscanf(line, fd);
-//                 $display("line : %h", line, $time);
-//                 in_data = line;
-//             end
-//             if ($feof(fd)) begin
-//                 ID = 1'b1;
-//                 how_to_last = 1'b1;     // Добавить расчет last block заранее 
-//                 #50                     // TODO: починить костыль
-//                 ID = 1'b0;
-//             end
-//             cnt_data = cnt_data + 1;
-//             cnt_cd = 0;
-//         end
-//     else
-//     if (cnt_cd < 25)
-//         cnt_cd = cnt_cd + 1;
-//     else
-//         cnt_data = 0;
-// end
+always @(posedge(ACLK)) begin
+    if(cnt_data < SHA/WIDTH) begin
+        if (TREADY == 1'b1 && !$feof(fd)) begin
+            if (queue_length > 1) begin
+                in_data = queue.pop_front();
+                queue_length = queue.size();
+            end
+            if (queue_length == 1) begin
+                ID = 1'b1;
+                in_data = queue.pop_front();
+                how_to_last = 1'b1;     // Добавить расчет last block заранее 
+                #50                     // TODO: починить костыль
+                ID = 1'b0;
+                queue_length = queue.size();
+            end
+            cnt_data = cnt_data + 1;
+            cnt_cd = 0;
+        end
+    end
+    else
+    if(cnt_cd == 0) begin
+       ID = 1'b1;
+       #50 ID = 1'b0;           // Сомнительно и не окэй
+       cnt_cd = cnt_cd + 1;
+    end
+    if (cnt_cd < 25 && cnt_cd > 0)
+        cnt_cd = cnt_cd + 1;
+    else
+        cnt_data = 0;
+end
 
-//// ������ ����
+//// Запись данных из файла
+
+// always @(posedge ACLK) begin
+//     if (TVALID_o == 1'b1 && TLAST_o == 1'b0) begin
+//         cnt = cnt + 1;
+//         Dres [(WIDTH*(cnt-3))-1:(WIDTH*(cnt-2))] = TDATA_o;
+//     end
+//     if (TVALID_o == 1'b1 &&  TLAST_o == 1'b1) begin
+//         cnt = cnt + 1;
+//         Dres [(WIDTH*(cnt-3))-1:(WIDTH*(cnt-2))] = TDATA_o;
+//         print_3;
+//         #20 $stop;
+//     end
+// end
 
 always @(posedge ACLK) begin
     if (TVALID_o == 1'b1 && TLAST_o == 1'b0) begin
@@ -180,6 +218,7 @@ always @(posedge ACLK) begin
         #20 $stop;
     end
 end
+
 //
 
 // Вывод нужного количества SHA
@@ -200,9 +239,39 @@ task print_2;
     for (int i = 0; i<SHA/WIDTH; i++) begin
         $display("%h", D_result [i]);
         $sformat(line_out, "%h", D_result [i]);
-        $fwrite(file_out, "%s\n", line_out);
+        $fwrite(file_out, "%s", line_out);
     end
     $fclose(file_out);
+endtask
+
+task print_3;
+    file_out = $fopen(FILE_OUT, "w");
+    begin
+    if (Mode == 1'b0) begin 
+        $display("Result: %h", Dres [1599:0]);
+        $sformat(line_out, "%h", Dres [1599:0]); 
+    end
+    else begin
+        if (USER == 2'b00) begin 
+            $display("Result: %h", Dres [223:0]);
+            $sformat(line_out, "%h", Dres [223:0]); 
+        end
+        if (USER == 2'b01) begin 
+            $display("Result: %h", Dres [255:0]);
+            $sformat(line_out, "%h", Dres [255:0]); 
+        end
+        if (USER == 2'b10) begin 
+            $display("Result: %h", Dres [383:0]);
+            $sformat(line_out, "%h", Dres [383:0]); 
+        end
+        if (USER == 2'b11) begin 
+            $display("Result: %h", Dres [511:0]);
+            $sformat(line_out, "%h", Dres [511:0]); 
+        end
+    end
+    $fwrite(file_out, "%s\n", line_out);
+    $fclose(file_out);
+    end
 endtask
 
 //// После расчета последнего сообщения переводит SHA в режим хранения
@@ -242,20 +311,6 @@ endtask
 //end
 //
 
-// ��������������� ��
-
-//always @(posedge ACLK) begin
-//	if (Ready == 1'b1 && Last == 1'b0) begin
-//		D_result [(WIDTH*cnt)-1:WIDTH*(cnt-1)] = Mode_out;
-//		cnt = cnt + 1;
-//	end
-//	if (Ready == 1'b1 &&  Last == 1'b1) begin
-//		D_result [(WIDTH*cnt)-1:WIDTH*(cnt-1)] = Mode_out;
-//		cnt = cnt + 1;
-//		$display("Result: %h", D_result);
-//		#20 $stop;
-//	end
-//end
 
 // Переворачивайт порядок байт (может не понадобиться)
 
