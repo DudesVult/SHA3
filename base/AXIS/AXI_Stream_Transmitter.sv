@@ -49,11 +49,11 @@ always_ff @(posedge ACLK) begin
                 TLAST <= 1'b0;
                 TUSER <= 2'b0;
                 TID   <= 1'b0;
-                TKEEP <= '{1'b0};
-                TSTRB <= '{1'b0};
+                TKEEP <= 0;
+                TSTRB <= 0;
                 TDEST <= 1'b0;
-                TDATA <= '{1'b0};
-                data_reg <= '{1'b0};
+                TDATA <= 0;
+                data_reg <= 0;
                 if (ARESETn) state <= WAIT_READY;
             end
             WAIT_READY: begin
