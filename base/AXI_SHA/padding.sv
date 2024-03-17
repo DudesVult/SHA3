@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module padder(
+module padding(
     input ACLK,
     input TLAST,
     input [1:0] TUSER,
