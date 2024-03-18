@@ -38,16 +38,16 @@ end
 
 //// padding
 
-// always_ff @(posedge ACLK) begin
-//     if (TLAST == 1'b1)
-//         case (TUSER)
-//         0:  D_reg[(1600-2*224):(1600-2*224)-4] = 4'h8;
-//         1:  D_reg[(1600-2*256)-64:(1600-2*256)-68] = 4'h8;
-//         2:  D_reg[(1600-2*384):(1600-2*384)-4] = 4'h8;
-//         3:  D_reg[(1600-2*512):(1600-2*512)-4] = 4'h8;
-//         default: D_reg[(1600-2*256)+4:(1600-2*256)]  = 4'h8;
-//         endcase
-// end
+always_ff @(posedge ACLK) begin
+    if (TLAST == 1'b1)
+        case (TUSER)
+        0:  D_reg[(1600-2*224):(1600-2*224)-4] = 4'h8;
+        1:  D_reg[(1600-2*256)-64:(1600-2*256)-68] = 4'h8;
+        2:  D_reg[(1600-2*384):(1600-2*384)-4] = 4'h8;
+        3:  D_reg[(1600-2*512):(1600-2*512)-4] = 4'h8;
+        default: D_reg[(1600-2*256)+4:(1600-2*256)]  = 4'h8;
+        endcase
+end
 
 //always_ff @(posedge ACLK) begin
 //    if (TLAST == 1'b1)

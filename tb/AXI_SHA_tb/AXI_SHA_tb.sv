@@ -67,7 +67,7 @@ AXI_SHA AXI_SHA_i(.*);
 
 int SHA;
 
-logic [4:0] cnt_data;
+logic [7:0] cnt_data;
 logic [4:0] cnt_cd;
 
 logic [1:0] TID_o;
@@ -161,7 +161,7 @@ end
 // экспериментальный
 
 always @(posedge(ACLK)) begin
-    if(cnt_data < SHA/WIDTH) begin
+    if(cnt_data < (1600 - SHA*2)/WIDTH) begin
         if (TREADY == 1'b1 && !$feof(fd)) begin
             if (queue_length > 1) begin
                 in_data = queue.pop_front();
@@ -175,20 +175,20 @@ always @(posedge(ACLK)) begin
                 ID = 1'b0;
                 queue_length = queue.size();
             end
-            cnt_data = cnt_data + 1;
-            cnt_cd = 0;
         end
+        cnt_data = cnt_data + 1;
+        cnt_cd = 0;
     end
     else
-    if(cnt_cd == 0) begin
-       ID = 1'b1;
-       #50 ID = 1'b0;           // Сомнительно и не окэй
-       cnt_cd = cnt_cd + 1;
-    end
-    if (cnt_cd < 25 && cnt_cd > 0)
-        cnt_cd = cnt_cd + 1;
-    else
-        cnt_data = 0;
+        if(cnt_cd == 0) begin
+            ID = 1'b1;
+            #50 ID = 1'b0;           // Сомнительно и не окэй
+            cnt_cd = cnt_cd + 1;
+        end
+        if (cnt_cd < 25 && cnt_cd > 0)
+            cnt_cd = cnt_cd + 1;
+        if (cnt_cd == 25)
+            cnt_data = 0;
 end
 
 //// Запись данных из файла
@@ -233,9 +233,15 @@ initial begin
     endcase
 end
 
+// initial begin
+//     file_out = $fopen(out.txt, "w");
+//     $fwrite(file_out, "%s", "xyz");
+//     $fclose(file_out);
+// end
+
 task print_2;
     file_out = $fopen(FILE_OUT, "w");
-    $display("Result: %h", D_result [i]);
+//    $display("Result: %h", D_result [i]);
     for (int i = 0; i<SHA/WIDTH; i++) begin
         $display("%h", D_result [i]);
         $sformat(line_out, "%h", D_result [i]);

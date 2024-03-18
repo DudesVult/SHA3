@@ -49,6 +49,7 @@ logic [47:0] txstate;
 logic [4:0] cnt;
 
 logic [4:0][4:0][63:0] D_out;
+logic [4:0][4:0][63:0] reg_out;
 logic [4:0][4:0][63:0] D_reg;
 
 logic SHA_valid;
@@ -111,14 +112,24 @@ Axi_Stream_Receiver Axi_Stream_Receiver_i (
 AXI_reg AXI_reg_i(
     .ACLK(ACLK),
     .ARESETn(ARESETn),
-    .TVALID(VALID_reg),   //VALID_reg
-    .data_in(out_data), // out_data
-    .D_out(D_out),
+    .TVALID(VALID_reg),     //VALID_reg
+    .data_in(out_data),     // out_data
+    .D_out(D_out),          // D_out
     .TLAST(TLAST),
     .TID(TID)
     ,.TUSER(TUSER)
     ,.VALID(SHA_valid)
 );
+
+// костыль && велосипед
+
+// padding padding_i(
+//     .ACLK(ACLK),
+//     .TLAST(TLAST),
+//     .TUSER(TUSER),    
+//     .D_in(reg_out),
+//     .D_out(D_out)    
+//     );
 
 keccak_xor keccak_xor_i(
     .clk(ACLK),
