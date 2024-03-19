@@ -79,7 +79,7 @@ logic TVALID_o;
 logic TLAST_o;
 logic [WIDTH-1:0] TDATA_o;
 
-bit [WIDTH-1:0] queue [$];
+//bit [WIDTH-1:0] queue [$];
 int queue_length;
 
 always #5 ACLK = !ACLK;
@@ -123,19 +123,19 @@ initial begin
 //	 #50 SHA_valid = 1'b0;
 end
 
-initial begin
-logic [15:0] data;
-automatic byte unsigned byte_data[2];
-    while (!$feof(fd)) begin
-        byte_data[0] = $fgetc(fd); // Читаем старший байт
-        byte_data[1] = $fgetc(fd); // Читаем младший байт
-        data = {byte_data[0], byte_data[1]}; // Соединяем байты в 16-битное значение
-        queue.push_back(data); // Записываем данные в очередь
-        $display("Я дурак, который не видит конец файла", $time);
-    end
-    $fclose(fd);
-    queue_length = queue.size();
-end
+//initial begin
+//logic [15:0] data;
+//automatic byte unsigned byte_data[2];
+//    while (!$feof(fd)) begin
+//        byte_data[0] = $fgetc(fd); // Читаем старший байт
+//        byte_data[1] = $fgetc(fd); // Читаем младший байт
+//        data = {byte_data[0], byte_data[1]}; // Соединяем байты в 16-битное значение
+//        queue.push_back(data); // Записываем данные в очередь
+//        $display("Я дурак, который не видит конец файла", $time);
+//    end
+//    $fclose(fd);
+//    queue_length = queue.size();
+//end
 
 //Чтение бинарного файла
 // Добавить счетчик до какого момента можно отправлять, проверку когда заново считывать
@@ -160,36 +160,36 @@ end
 
 // экспериментальный
 
-always @(posedge(ACLK)) begin
-    if(cnt_data < (1600 - SHA*2)/WIDTH) begin
-        if (TREADY == 1'b1 && !$feof(fd)) begin
-            if (queue_length > 1) begin
-                in_data = queue.pop_front();
-                queue_length = queue.size();
-            end
-            if (queue_length == 1) begin
-                ID = 1'b1;
-                in_data = queue.pop_front();
-                how_to_last = 1'b1;     // Добавить расчет last block заранее 
-                #50                     // TODO: починить костыль
-                ID = 1'b0;
-                queue_length = queue.size();
-            end
-        end
-        cnt_data = cnt_data + 1;
-        cnt_cd = 0;
-    end
-    else
-        if(cnt_cd == 0) begin
-            ID = 1'b1;
-            #50 ID = 1'b0;           // Сомнительно и не окэй
-            cnt_cd = cnt_cd + 1;
-        end
-        if (cnt_cd < 25 && cnt_cd > 0)
-            cnt_cd = cnt_cd + 1;
-        if (cnt_cd == 25)
-            cnt_data = 0;
-end
+//always @(posedge(ACLK)) begin
+//    if(cnt_data < (1600 - SHA*2)/WIDTH) begin
+//        if (TREADY == 1'b1 && !$feof(fd)) begin
+//            if (queue_length > 1) begin
+//                in_data = queue.pop_front();
+//                queue_length = queue.size();
+//            end
+//            if (queue_length == 1) begin
+//                ID = 1'b1;
+//                in_data = queue.pop_front();
+//                how_to_last = 1'b1;     // Добавить расчет last block заранее 
+//                #50                     // TODO: починить костыль
+//                ID = 1'b0;
+//                queue_length = queue.size();
+//            end
+//        end
+//        cnt_data = cnt_data + 1;
+//        cnt_cd = 0;
+//    end
+//    else
+//        if(cnt_cd == 0) begin
+//            ID = 1'b1;
+//            #50 ID = 1'b0;           // Сомнительно и не окэй
+//            cnt_cd = cnt_cd + 1;
+//        end
+//        if (cnt_cd < 25 && cnt_cd > 0)
+//            cnt_cd = cnt_cd + 1;
+//        if (cnt_cd == 25)
+//            cnt_data = 0;
+//end
 
 //// Запись данных из файла
 

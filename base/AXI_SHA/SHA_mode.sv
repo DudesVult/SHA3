@@ -20,9 +20,10 @@ module SHA_mode #(
    logic [1599:0] Dreg;
    logic [5:0] lite_lim;
    logic [63:0] rev; 
+	logic [63:0] rev1; 
    
    logic reg_Last;
-      
+		 
 always_ff @(posedge ACLK) begin
     if (Ready == 1'b1)
         case (TUSER)
@@ -54,16 +55,17 @@ always_ff @(posedge ACLK) begin
     end
 end
 
-generate
-    for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
-        always @(posedge ACLK) begin
-//         if(Last == 1'b0)
-            if (cnt == i+1)
-                Dout = Dreg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i];
-                // Dout = Dreg [1600 - DATA_WIDTH*i : 1600 - DATA_WIDTH*(i+1)];
-        end
-    end
-endgenerate
+//generate
+//	genvar i;
+//    for(i = 0; i<(1600/DATA_WIDTH); i++) begin : name_4
+//        always @(posedge ACLK) begin
+////         if(Last == 1'b0)
+//            if (cnt == i+1)
+//                Dout = Dreg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i];
+//                // Dout = Dreg [1600 - DATA_WIDTH*i : 1600 - DATA_WIDTH*(i+1)];
+//        end
+//    end
+//endgenerate
 
 // generate
 //     for(genvar i = 0; i<25; i++) begin
@@ -75,19 +77,20 @@ endgenerate
 
 // byte_reversal in HW
 
- generate
-     for(genvar j = 1; j<26; j++) begin
-         always @(posedge ACLK) begin
-//         if(Last == 1'b0)
-             if (cnt == j-1)
-                rev = Din [(25-j)%5] [(25-j)/5];
-//                rev = ((rev<<32)  & 64'hFFFFFFFF00000000)|((rev>>32) & 64'h00000000FFFFFFFF);
-//                rev = ((rev<<16)  & 64'hFFFF0000FFFF0000)|((rev>>16) & 64'h0000FFFF0000FFFF);
-                rev = ((rev<<8)   & 64'hFF00FF00FF00FF00)|((rev>>8)  & 64'h00FF00FF00FF00FF);
-                Dreg [64*j-1:64*(j-1)] = (cnt == j-1) ? rev : Dreg [64*j-1:64*(j-1)];
-            end
-     end
- endgenerate
+// generate
+//	genvar j;
+//     for(j = 1; j<26; j++) begin : name_5
+//         always @(posedge ACLK) begin
+////         if(Last == 1'b0)
+//             if (cnt == j-1)
+//                rev = Din [(25-j)%5] [(25-j)/5];
+////                rev = ((rev<<32)  & 64'hFFFFFFFF00000000)|((rev>>32) & 64'h00000000FFFFFFFF);
+////                rev = ((rev<<16)  & 64'hFFFF0000FFFF0000)|((rev>>16) & 64'h0000FFFF0000FFFF);
+//                rev = ((rev<<8)   & 64'hFF00FF00FF00FF00)|((rev>>8)  & 64'h00FF00FF00FF00FF);
+//                Dreg [64*j-1:64*(j-1)] = (cnt == j-1) ? rev : Dreg [64*j-1:64*(j-1)];
+//            end
+//     end
+// endgenerate
     
 //assign  Dreg [63:0]        = Din [4][4];
 //assign  Dreg [127:64]      = Din [4][3];

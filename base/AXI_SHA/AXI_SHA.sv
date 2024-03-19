@@ -13,9 +13,9 @@ module AXI_SHA #(
     input   how_to_last,
     input   VALID_i,
     output  [DATA_WIDTH-1:0] out_data,
-    output  [4:0][4:0][63:0] Dout
+//    output  [4:0][4:0][63:0] Dout
     // ,output logic VALID
-    ,output Ready
+    output Ready
     // ,input SHA_valid
     ,input Mode
     ,output Last
@@ -114,7 +114,7 @@ AXI_reg AXI_reg_i(
     .ARESETn(ARESETn),
     .TVALID(VALID_reg),     //VALID_reg
     .data_in(out_data),     // out_data
-    .D_out(D_out),          // D_out
+    .D_out(reg_out),          // D_out
     .TLAST(TLAST),
     .TID(TID)
     ,.TUSER(TUSER)
@@ -123,13 +123,13 @@ AXI_reg AXI_reg_i(
 
 // костыль && велосипед
 
-// padding padding_i(
-//     .ACLK(ACLK),
-//     .TLAST(TLAST),
-//     .TUSER(TUSER),    
-//     .D_in(reg_out),
-//     .D_out(D_out)    
-//     );
+ padding padding_i(
+     .ACLK(ACLK),
+     .TLAST(TLAST),
+     .TUSER(TUSER),    
+     .D_in(reg_out),
+     .D_out(D_out)    
+     );
 
 keccak_xor keccak_xor_i(
     .clk(ACLK),
@@ -174,6 +174,6 @@ Axi_Stream_Transmitter Axi_Stream_Transmitter_o(
     ,.txstate(txstate_tx_0)  
 );    
 
-assign Dout = D_reg;
+//assign Dout = D_reg;
 
 endmodule

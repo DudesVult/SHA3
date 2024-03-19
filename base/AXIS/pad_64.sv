@@ -8,7 +8,8 @@ module pad_64 (
 logic [63:0] d_reg;
 
 generate
-    for (genvar i = 0; i < 64; i++) begin
+	genvar i;
+    for (i = 0; i < 64; i++) begin : name_1
         assign d_reg = (TLAST == 1'b1) ? {{60-i}*{1'b0}, 4'h6, din[i-1:0]}: din;
     end
 endgenerate
