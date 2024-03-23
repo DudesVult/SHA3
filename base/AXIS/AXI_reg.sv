@@ -11,6 +11,7 @@ module AXI_reg #(
     input TID,
     input [1:0] TUSER,
     input [DATA_WIDTH-1:0] data_in,
+    input [7:0] TDEST,
 
     output [0:4][0:4][63:0] D_out
     ,output logic VALID
@@ -19,22 +20,42 @@ module AXI_reg #(
 logic [1599:0] D_reg;
 logic [7:0] cnt;
 
+logic [9:0] SHA;
+
+logic refresh_reg;
+
+// always @(TUSER) begin
+//     case(TUSER)
+//         2'b00   :   SHA = 224;
+//         2'b01   :   SHA = 256;
+//         2'b10   :   SHA = 384;
+//         2'b11   :   SHA = 512;
+//         default :   SHA = 256;
+//     endcase
+// end
+
 always_ff @(posedge ACLK)
     VALID <= TID; 
+    
+// always_ff @(posedge ACLK) begin
+//     if (TID == 1'b0 && VALID == 1'b1)
+//         refresh_reg = 1'b1;
+//     else
+//         refresh_reg = 1'b0;
+// end
 
-always_ff @(posedge ACLK) begin
-    if (ARESETn == 1'b0) 
-        cnt = 0;
-    else
-        if (TVALID == 1'b1 && TLAST == 1'b0)
-            cnt <= cnt + 1;
-        else begin
-            cnt <= -1;
-
-        end
-//    if (cnt == 8'd101)
-//        cnt = -1;
-end
+// always_ff @(posedge ACLK) begin
+//     if (ARESETn == 1'b0) 
+//         cnt = 0;
+//     else
+//         if (TVALID == 1'b1 && TLAST == 1'b0 && VALID == 1'b0)
+//             cnt <= cnt + 1;
+//         else begin
+//             cnt <= -1;
+//         end
+// //    if (cnt == SHA/DATA_WIDTH)
+// //        cnt = -1;
+// end
 
 //// padding
 
@@ -42,7 +63,7 @@ always_ff @(posedge ACLK) begin
     if (TLAST == 1'b1)
         case (TUSER)
         0:  D_reg[(1600-2*224):(1600-2*224)-4] = 4'h8;
-        1:  D_reg[(1600-2*256)-64:(1600-2*256)-68] = 4'h8;
+        1:  D_reg[(1600-2*256):(1600-2*256)-4] = 4'h8;
         2:  D_reg[(1600-2*384):(1600-2*384)-4] = 4'h8;
         3:  D_reg[(1600-2*512):(1600-2*512)-4] = 4'h8;
         default: D_reg[(1600-2*256)+4:(1600-2*256)]  = 4'h8;
@@ -70,7 +91,7 @@ generate
     for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
         always @(negedge ACLK) begin
             if(TLAST != 1'b1)
-                D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (ARESETn == 1'b0) ? 0 : ((cnt == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]); // cnt-1 if using padder
+                D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (ARESETn == 1'b0 || TDEST == 255) ? 0 : ((TDEST == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]); // cnt-1 if using padder
         end
     end
 endgenerate

@@ -90,11 +90,6 @@ always @(posedge clk)
 					  reg_ready 		<= '1;
 					  cnt_rnd           <= 5'd0;					  
 				end
-				
-            WAIT : begin
-                      cnt_rnd           <= 5'd0;
-                      reg_ready 		<= '1;				  
-				end
 
 	endcase
 end
@@ -128,21 +123,17 @@ always @(posedge clk)
 			  end
 
 			XOR:	begin
+				if (Din_valid)
 				  nextstate = PROC;
+				else
+				  nextstate = XOR;
 			  end
 
 			OUT:	begin
-			if (Din_valid)
+			if (Din_valid && !Last_block)
 			    nextstate = INIT_D;
             else
-                nextstate = WAIT;
-            end
-
-			WAIT:	begin
-			if (Din_valid)
-			    nextstate = INIT_D;
-            else
-                nextstate = WAIT;
+                nextstate = OUT;
             end
 
 	endcase

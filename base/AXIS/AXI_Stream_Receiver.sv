@@ -12,13 +12,15 @@ module Axi_Stream_Receiver #(
   input [(DATA_WIDTH/8)-1:0] TKEEP,
   input [(DATA_WIDTH/8)-1:0] TSTRB,
   input TID, // valid для SHA
-  input TDEST,
+  input [7:0] TDEST,
   input [1:0] TUSER, // тип SHA
   
   output logic TREADY,
   output logic [DATA_WIDTH-1:0] out_data,
-  output logic [127:0] txstate
-  ,output logic VALID_reg
+  output logic [127:0] txstate,
+  output logic [7:0] DEST_o,
+  output logic VALID_reg
+  ,output logic ID
 );
 
 logic [DATA_WIDTH-1:0] data_reg;
@@ -45,6 +47,8 @@ always_ff @(posedge ACLK) begin
 			TREADY <= 1'b0;
 			VALID_reg <= 1'b0;
 			data_reg <= (DATA_WIDTH/8)*{1'b0};
+			DEST_o <= 0;
+			ID <= 1'b0;
 			if (ARESETn) state <= WAIT_INPUT_DATA;
 		end
 		WAIT_INPUT_DATA: begin
@@ -55,6 +59,8 @@ always_ff @(posedge ACLK) begin
 		LOAD_OUTPUT_DATA: begin
 			data_reg <= TDATA;
 			VALID_reg <= TVALID;
+			DEST_o <= TDEST;
+			ID <= TID;
 			if (TVALID && ~TLAST) state <= LOAD_OUTPUT_DATA;
 			else state <= WAIT_INPUT_DATA;
 			end

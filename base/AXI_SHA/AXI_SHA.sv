@@ -12,6 +12,7 @@ module AXI_SHA #(
     input   [DATA_WIDTH-1:0] in_data,
     input   how_to_last,
     input   VALID_i,
+    input   [7:0] DEST,
     output  [DATA_WIDTH-1:0] out_data,
     output  [4:0][4:0][63:0] Dout
     // ,output logic VALID
@@ -33,7 +34,7 @@ module AXI_SHA #(
 logic [(DATA_WIDTH/8)-1:0] TKEEP;
 logic [(DATA_WIDTH/8)-1:0] TSTRB;
 logic TID;
-logic TDEST;
+logic [7:0] TDEST;
 logic TVALID;
 logic TLAST;
 logic [1:0] TUSER;
@@ -58,6 +59,10 @@ logic [DATA_WIDTH-1:0] Mode_out;
 
 logic VALID;
 
+logic [7:0] DEST_reg;
+logic [7:0] DEST_o;
+logic ID_o;
+
 /*  SHA_Mode    */
 
 //logic Ready;
@@ -70,6 +75,7 @@ Axi_Stream_Transmitter Axi_Stream_Transmitter_i(
     .TREADY(TREADY),
     .VALID(VALID_i),
     .in_data(in_data),
+    .DEST(DEST),
     .how_to_last(how_to_last),
     .USER(USER),
     .ID(ID),
@@ -99,6 +105,8 @@ Axi_Stream_Receiver Axi_Stream_Receiver_i (
     .txstate(txstate_rx),
     .out_data(out_data),
     .VALID_reg(VALID_reg)
+    ,.DEST_o(DEST_reg)
+    ,.ID(ID_o)
 );
 
 //pad_16 UUT_pad_16 (
@@ -112,11 +120,12 @@ Axi_Stream_Receiver Axi_Stream_Receiver_i (
 AXI_reg AXI_reg_i(
     .ACLK(ACLK),
     .ARESETn(ARESETn),
-    .TVALID(VALID_reg),     //VALID_reg
-    .data_in(out_data),     // out_data
+    .TDEST(DEST_reg),
+    .TVALID(TVALID),     //VALID_reg
+    .data_in(TDATA),     // out_data
     .D_out(D_out),          // D_out
     .TLAST(TLAST),
-    .TID(TID)
+    .TID(ID_o)
     ,.TUSER(TUSER)
     ,.VALID(SHA_valid)
 );
