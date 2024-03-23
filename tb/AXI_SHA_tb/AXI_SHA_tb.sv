@@ -102,7 +102,7 @@ initial begin
     VALID_i = 1'b1;
     in_data = 16'd0;
     how_to_last = 1'b0;
-    USER = 2'd3;		// Еще используется? Мб перенести ID сюда 
+    USER = 2'd0;		// Еще используется? Мб перенести ID сюда 
     ID = 1'b0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
     // SHA_valid = 1'b0;
 	Mode = 1'b1;
@@ -182,6 +182,7 @@ always @(posedge(ACLK)) begin
                 queue_length = queue.size();
             end
             if (queue_length == 0) begin
+                in_data = 0;
                 ID = 1'b1;
                 how_to_last = 1'b1;     // Добавить расчет last block заранее 
                 #50                     // TODO: починить костыль
@@ -191,11 +192,12 @@ always @(posedge(ACLK)) begin
             end
             DEST = DEST + 1;
             cnt_cd = 0;
-            $display("queue_length: %d , cnt: %d", queue_length, DEST, $time);
+            $display("queue_length: %d , cnt: %d, data: %h", queue_length, DEST, in_data, $time);
         end
         else if (DEST == 255)
             DEST = 0;
         else begin
+            in_data = queue.pop_front();
             ID = 1'b1;
             #50 ID = 1'b0;
             #20 DEST = 255;           // Сомнительно и не окэй
@@ -280,8 +282,8 @@ logic [WIDTH-1:0] data;
         queue.push_back(data); // Записываем данные в очередь
     end
     $fclose(fd);
-    in_data = queue.pop_front();
-    queue_length = queue.size();
+    // in_data = queue.pop_front();
+    // queue_length = queue.size();
 endtask
 
 task print_2;
