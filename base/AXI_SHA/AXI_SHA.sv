@@ -123,7 +123,7 @@ AXI_reg AXI_reg_i(
     .TDEST(DEST_reg),
     .TVALID(TVALID),     //VALID_reg
     .data_in(TDATA),     // out_data
-    .D_out(D_out),          // D_out
+    .D_out(reg_out),          // D_out
     .TLAST(TLAST),
     .TID(ID_o)
     ,.TUSER(TUSER)
@@ -132,13 +132,13 @@ AXI_reg AXI_reg_i(
 
 // костыль && велосипед
 
-// padding padding_i(
-//     .ACLK(ACLK),
-//     .TLAST(TLAST),
-//     .TUSER(TUSER),    
-//     .D_in(reg_out),
-//     .D_out(D_out)    
-//     );
+padding padding_i(
+    .ACLK(ACLK),
+    .TLAST(TLAST),
+    .TUSER(TUSER),    
+    .D_in(reg_out),
+    .D_out(D_out)    
+    );
 
 keccak_xor keccak_xor_i(
     .clk(ACLK),

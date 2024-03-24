@@ -9,13 +9,14 @@ module padding(
 );
 
 always_ff @(posedge ACLK) begin
+    D_out <= D_in;
     if (TLAST == 1'b1)
         case (TUSER)
-        0:  D_out [2][1][63:59]= 4'h8;
-        1:  D_out [2][0][63:59] = 4'h8;
-        2:  D_out [1][2][63:59] = 4'h8;
-        3:  D_out [1][3][63:59] = 4'h8;
-        default: D_out [2][0][63:59]  = 4'h8;
+        0:  D_out [2][3][63:60] = 4'h8;
+        1:  D_out [1][3][63:60] = 4'h8;
+        2:  D_out [2][2][63:60] = 4'h8;
+        3:  D_out [3][1][63:60] = 4'h8;
+        default: D_out [2][0][63:60]  = 4'h8;
         endcase
 end
 

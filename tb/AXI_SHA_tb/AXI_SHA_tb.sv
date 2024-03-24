@@ -102,7 +102,7 @@ initial begin
     VALID_i = 1'b1;
     in_data = 16'd0;
     how_to_last = 1'b0;
-    USER = 2'd3;		// Еще используется? Мб перенести ID сюда 
+    USER = 2'd0;		// Еще используется? Мб перенести ID сюда 
     ID = 1'b0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
     // SHA_valid = 1'b0;
 	Mode = 1'b1;
