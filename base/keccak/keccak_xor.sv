@@ -25,7 +25,7 @@ logic 	[2:0] 					state, nextstate;
 	 
 genvar x,i,col,row;
 
-localparam RST = 0, INIT_D = 1, PROC = 2, XOR = 3, OUT = 4, WAIT = 5;
+localparam RST = 0, INIT_D = 1, PROC = 2, XOR = 3, OUT = 4;
 
 always @(state) begin
 	case(state)
@@ -34,8 +34,6 @@ always @(state) begin
 		PROC	:	txstate = "PROC";
 		XOR		:	txstate = "XOR";
 		OUT		:	txstate = "OUT";
-		WAIT	:	txstate = "WAIT";
-		//WAIT state? 
 	endcase
 end
 

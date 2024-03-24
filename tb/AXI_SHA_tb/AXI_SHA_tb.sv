@@ -102,7 +102,7 @@ initial begin
     VALID_i = 1'b1;
     in_data = 16'd0;
     how_to_last = 1'b0;
-    USER = 2'd0;		// Еще используется? Мб перенести ID сюда 
+    USER = 2'd3;		// Еще используется? Мб перенести ID сюда 
     ID = 1'b0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
     // SHA_valid = 1'b0;
 	Mode = 1'b1;
@@ -117,6 +117,8 @@ initial begin
 //    fd = $fopen("Copilot.bin","r");
     fd = $fopen("1600.bin","r");
 //    fd = $fopen("order.bin","r");
+//    fd = $fopen("test.docx","r");
+//    fd = $fopen("test.bin","r");
     if (fd) $display("Success :%d", fd);
     else    $display("Error :%d", fd);
 end
@@ -271,6 +273,8 @@ end
 //     $fclose(file_out);
 // end
 
+// Working version
+
 task readfile;
 logic [WIDTH-1:0] data;
     queue.delete();
@@ -278,13 +282,43 @@ logic [WIDTH-1:0] data;
     how_to_last = 0;
     while (!$feof(fd)) begin
         status = $fread (data,fd);
-        // $display("Status: %h, data: %h",status, data, $time);
+        $display("Status: %h, data: %h",status, data, $time);
         queue.push_back(data); // Записываем данные в очередь
     end
     $fclose(fd);
     // in_data = queue.pop_front();
     // queue_length = queue.size();
 endtask
+
+// Exeperimental readmemh
+
+// task readfile;
+// logic [WIDTH-1:0] data;
+// logic [WIDTH-1:0] memory [0:1023];
+//     queue.delete();
+//     DEST = 0;
+//     how_to_last = 0;
+//     $readmemh("tets.mem", memory);
+//     $display("Memory : %h", memory[0]);
+//     $fclose(fd);
+//     // in_data = queue.pop_front();
+//     // queue_length = queue.size();
+// endtask
+
+// not working version 
+
+// task readfile;
+// logic [15:0] data;
+// automatic byte unsigned byte_data[2];
+//     while (!$feof(fd)) begin
+//         byte_data[0] = $fgetc(fd); // Читаем старший байт
+//         byte_data[1] = $fgetc(fd); // Читаем младший байт
+//         data = {byte_data[0], byte_data[1]}; // Соединяем байты в 16-битное значение
+//         queue.push_back(data); // Записываем данные в очередь
+//         $display("Я дурак, который не видит конец файла", $time);
+//     end
+//     $fclose(fd);
+// endtask
 
 task print_2;
     file_out = $fopen(FILE_OUT, "w");
