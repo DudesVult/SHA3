@@ -109,14 +109,6 @@ Axi_Stream_Receiver Axi_Stream_Receiver_i (
     ,.ID(ID_o)
 );
 
-//pad_16 UUT_pad_16 (
-//    .ACLK(ACLK),
-//    .TLAST(TLAST),
-//    .TUSER(TUSER),
-//    .din(out_data),
-//    .dout(p_Data)
-//);
-
 AXI_reg AXI_reg_i(
     .ACLK(ACLK),
     .ARESETn(ARESETn),
@@ -129,8 +121,6 @@ AXI_reg AXI_reg_i(
     ,.TUSER(TUSER)
     ,.VALID(SHA_valid)
 );
-
-// костыль && велосипед
 
 padding padding_i(
     .ACLK(ACLK),

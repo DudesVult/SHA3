@@ -19,9 +19,12 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
+// `include "test.mem"
 
 module AXI_SHA_tb();
 localparam WIDTH = 16;
+
+localparam SHA = 512;
 
 logic ACLK;
 logic ARESETn;
@@ -90,6 +93,8 @@ int queue_length;
 
 int status;
 
+localparam mem   = "test.mem";  // bitmap file
+
 always #5 ACLK = !ACLK;
 
 // Начальные значения
@@ -102,7 +107,7 @@ initial begin
     VALID_i = 1'b1;
     in_data = 16'd0;
     how_to_last = 1'b0;
-    USER = 2'd0;		// Еще используется? Мб перенести ID сюда 
+    // USER = 2'd0;		// Еще используется? Мб перенести ID сюда 
     ID = 1'b0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
     // SHA_valid = 1'b0;
 	Mode = 1'b1;
@@ -187,7 +192,7 @@ always @(posedge(ACLK)) begin
                 in_data = 0;
                 ID = 1'b1;
                 how_to_last = 1'b1;     // Добавить расчет last block заранее 
-                #50                     // TODO: починить костыль
+                #50                     
                 ID = 1'b0;
                 queue_length = queue.size();
                 DEST = 255;
@@ -202,40 +207,11 @@ always @(posedge(ACLK)) begin
             in_data = queue.pop_front();
             ID = 1'b1;
             #50 ID = 1'b0;
-            #20 DEST = 255;           // Сомнительно и не окэй
+            #20 DEST = 255;
             #20;
         end
     end
-//// Использовался в режиме когда новые данные не отправляются пока сша не посчитает хэш
-
-    //         if(cnt_cd == 0) begin
-    //             ID = 1'b1;
-    //             #50 ID = 1'b0;           // Сомнительно и не окэй
-    //             cnt_cd = cnt_cd + 1;
-    //         end
-    //         if (cnt_cd < 25 && cnt_cd > 0) begin
-    //             cnt_cd = cnt_cd + 1;
-    //             // ID = 1'b1;
-    //         end
-    //         if (cnt_cd == 25)
-    //             DEST = 0;
-    // end
 end
-
-//// Запись данных из файла
-
-// always @(posedge ACLK) begin
-//     if (TVALID_o == 1'b1 && TLAST_o == 1'b0) begin
-//         cnt = cnt + 1;
-//         Dres [(WIDTH*(cnt-3))-1:(WIDTH*(cnt-2))] = TDATA_o;
-//     end
-//     if (TVALID_o == 1'b1 &&  TLAST_o == 1'b1) begin
-//         cnt = cnt + 1;
-//         Dres [(WIDTH*(cnt-3))-1:(WIDTH*(cnt-2))] = TDATA_o;
-//         print_3;
-//         #20 $stop;
-//     end
-// end
 
 always @(posedge ACLK) 
     TVALID_o_reg <= TVALID_o;
@@ -253,57 +229,49 @@ always @(posedge ACLK) begin
     end
 end
 
-//
-
-// Вывод нужного количества SHA
+// Перевод размера SHA в сигнал
 
 initial begin
-    case(USER)
-        0 : SHA = 224;
-        1 : SHA = 256;
-        2 : SHA = 384;
-        3 : SHA = 512;
-        default : SHA = 256;
+    case(SHA)
+        224 : USER = 2'd0;
+        256 : USER = 2'd1;
+        384 : USER = 2'd2;
+        512 : USER = 2'd3;
+        default : USER = 2'd1;
     endcase
 end
 
-// initial begin
-//     file_out = $fopen(out.txt, "w");
-//     $fwrite(file_out, "%s", "xyz");
-//     $fclose(file_out);
-// end
-
 // Working version
-
-task readfile;
-logic [WIDTH-1:0] data;
-    queue.delete();
-    DEST = 0;
-    how_to_last = 0;
-    while (!$feof(fd)) begin
-        status = $fread (data,fd);
-        $display("Status: %h, data: %h",status, data, $time);
-        queue.push_back(data); // Записываем данные в очередь
-    end
-    $fclose(fd);
-    // in_data = queue.pop_front();
-    // queue_length = queue.size();
-endtask
-
-// Exeperimental readmemh
 
 // task readfile;
 // logic [WIDTH-1:0] data;
-// logic [WIDTH-1:0] memory [0:1023];
 //     queue.delete();
 //     DEST = 0;
 //     how_to_last = 0;
-//     $readmemh("tets.mem", memory);
-//     $display("Memory : %h", memory[0]);
+//     while (!$feof(fd)) begin
+//         status = $fread (data,fd);
+//         $display("Status: %h, data: %h",status, data, $time);
+//         queue.push_back(data); // Записываем данные в очередь
+//     end
 //     $fclose(fd);
 //     // in_data = queue.pop_front();
 //     // queue_length = queue.size();
 // endtask
+
+// Exeperimental readmemh
+
+task readfile;
+logic [WIDTH-1:0] data;
+logic [WIDTH-1:0] memory [0:1023];
+    queue.delete();
+    DEST = 0;
+    how_to_last = 0;
+    $readmemh(mem, memory);
+    $display("Memory : %h", memory[0]);
+    $fclose(fd);
+    // in_data = queue.pop_front();
+    // queue_length = queue.size();
+endtask
 
 // not working version 
 
@@ -360,58 +328,6 @@ task print_3;
     $fclose(file_out);
     end
 endtask
-
-//// После расчета последнего сообщения переводит SHA в режим хранения
-	
-//always @(posedge ACLK) begin
-//	if(Ready == 1'b1) begin
-//	   SHA_valid = 1'b0;
-//    end
-//end
-
-//// Не помню зачем добавил...
-
-// initial begin
-// 	forever begin
-// 	#1;
-// 	for (int i = 0; i<5; i++)
-// 		for (int j = 0; j<5; j++)
-// 			D_out[i][j] = revers_byte(Dout[i][j]);
-// 	end
-// end
-
-//// Функция, которая будет ловить поток с АКС�? передатчика
-
-//always @(posedge ACLK) begin
-//    for(cnt = 0; cnt<(1600/WIDTH); cnt++) begin
-//        if (Ready == 1'b1 && Last == 1'b0) begin
-//            D_result [(WIDTH*cnt)-1:WIDTH*(cnt-1)] = Mode_out;
-//            cnt = cnt + 1;
-//        end
-//        if (Ready == 1'b1 &&  Last == 1'b1) begin
-//            D_result [(WIDTH*cnt)-1:WIDTH*(cnt-1)] = Mode_out;
-//            cnt = cnt + 1;
-//            $display("Result: %h", D_result);
-//            #20 $stop;
-//        end
-//    end
-//end
-//
-
-
-// Переворачивайт порядок байт (может не понадобиться)
-
-function logic [63:0] revers_byte(logic [63:0] data);
-	logic [63:0] res;
-
-	begin
-		res = data;
-		res = ((res<<32)  & 64'hFFFFFFFF00000000)|((res>>32) & 64'h00000000FFFFFFFF);
-		res = ((res<<16)  & 64'hFFFF0000FFFF0000)|((res>>16) & 64'h0000FFFF0000FFFF);
-		res = ((res<<8)   & 64'hFF00FF00FF00FF00)|((res>>8)  & 63'h00FF00FF00FF00FF);
-		return res;
-	end
-endfunction  
 
 // Функция для вывода правильного хэша в терминал
 

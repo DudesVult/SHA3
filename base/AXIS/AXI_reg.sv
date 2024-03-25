@@ -24,38 +24,9 @@ logic [9:0] SHA;
 
 logic refresh_reg;
 
-// always @(TUSER) begin
-//     case(TUSER)
-//         2'b00   :   SHA = 224;
-//         2'b01   :   SHA = 256;
-//         2'b10   :   SHA = 384;
-//         2'b11   :   SHA = 512;
-//         default :   SHA = 256;
-//     endcase
-// end
-
 always_ff @(posedge ACLK)
     VALID <= TID; 
     
-//// padding
-
-// always_ff @(posedge ACLK) begin
-//     if (TLAST == 1'b1)
-//         case (TUSER)
-//         0:  D_reg[(1600-2*224):(1600-2*224)-4] = 4'h8;
-//         1:  D_reg[(1600-2*256):(1600-2*256)-4] = 4'h8;
-//         2:  D_reg[(1600-2*384):(1600-2*384)-4] = 4'h8;
-//         3:  D_reg[(1600-2*512):(1600-2*512)-4] = 4'h8;
-//         default: D_reg[(1600-2*256)+4:(1600-2*256)]  = 4'h8;
-//         endcase
-// end
-
-//generate
-//    for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
-//        assign D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (ARESETn == 1'b0) ? '{1'b0} : ((cnt == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]);
-//    end
-//endgenerate
-
 generate
     for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
         always @(negedge ACLK) begin
