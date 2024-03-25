@@ -68,8 +68,6 @@ int fd; // file descriptor
 
 AXI_SHA AXI_SHA_i(.*);
 
-int SHA;
-
 logic [7:0] DEST;
 logic [4:0] cnt_cd;
 
@@ -128,15 +126,21 @@ initial begin
     else    $display("Error :%d", fd);
 end
 
-//// Хэш от 0
+// Перевод размера SHA в сигнал
+
+initial begin
+    case(SHA)
+        224 : USER = 2'd0;
+        256 : USER = 2'd1;
+        384 : USER = 2'd2;
+        512 : USER = 2'd3;
+        default : USER = 2'd1;
+    endcase
+end
 
 initial begin
     #50 ARESETn = 1'b0;
     #50 ARESETn = 1'b1;
-//	 in_data = 16'd6; // 16'd0
-//	 how_to_last = 1'b1;
-//	 #50 SHA_valid = 1'b1;
-//	 #50 SHA_valid = 1'b0;
 end
 
 always @(posedge ACLK) begin
@@ -176,6 +180,22 @@ always @(posedge read)
 // end
 
 // экспериментальный
+
+// always @(posedge(ACLK)) begin
+//     if (TREADY == 1'b1 && !$feof(fd)) begin
+//         if (!$feof(fd)) begin
+//             $fgets(line, fd);
+//             $display("line : %h", line, $time);
+//             in_data = line;
+//         end
+//         if ($feof(fd)) begin
+//             ID = 1'b1;
+//             how_to_last = 1'b1;     // Добавить расчет last block заранее 
+//             #50                     // TODO: починить костыль
+//             ID = 1'b0;
+//         end
+//     end
+// end
 
 always @(posedge(ACLK)) begin
         TREADY_reg = TREADY;
@@ -229,49 +249,37 @@ always @(posedge ACLK) begin
     end
 end
 
-// Перевод размера SHA в сигнал
-
-initial begin
-    case(SHA)
-        224 : USER = 2'd0;
-        256 : USER = 2'd1;
-        384 : USER = 2'd2;
-        512 : USER = 2'd3;
-        default : USER = 2'd1;
-    endcase
-end
-
 // Working version
-
-// task readfile;
-// logic [WIDTH-1:0] data;
-//     queue.delete();
-//     DEST = 0;
-//     how_to_last = 0;
-//     while (!$feof(fd)) begin
-//         status = $fread (data,fd);
-//         $display("Status: %h, data: %h",status, data, $time);
-//         queue.push_back(data); // Записываем данные в очередь
-//     end
-//     $fclose(fd);
-//     // in_data = queue.pop_front();
-//     // queue_length = queue.size();
-// endtask
-
-// Exeperimental readmemh
 
 task readfile;
 logic [WIDTH-1:0] data;
-logic [WIDTH-1:0] memory [0:1023];
     queue.delete();
     DEST = 0;
     how_to_last = 0;
-    $readmemh(mem, memory);
-    $display("Memory : %h", memory[0]);
+    while (!$feof(fd)) begin
+        status = $fread (data,fd);
+        $display("Status: %h, data: %h",status, data, $time);
+        queue.push_back(data); // Записываем данные в очередь
+    end
     $fclose(fd);
     // in_data = queue.pop_front();
     // queue_length = queue.size();
 endtask
+
+// Exeperimental readmemh
+
+// task readfile;
+// logic [WIDTH-1:0] data;
+// logic [WIDTH-1:0] memory [0:1023];
+//     queue.delete();
+//     DEST = 0;
+//     how_to_last = 0;
+//     $readmemh(mem, memory);
+//     $display("Memory : %h", memory[0]);
+//     $fclose(fd);
+//     // in_data = queue.pop_front();
+//     // queue_length = queue.size();
+// endtask
 
 // not working version 
 
@@ -327,18 +335,6 @@ task print_3;
     $fwrite(file_out, "%s\n", line_out);
     $fclose(file_out);
     end
-endtask
-
-// Функция для вывода правильного хэша в терминал
-
-task print;
-	// file_out = $fopen(FILE_OUT, "w");
-	$display("Hash from function: %h%h%h%h", revers_byte(Dout[0][0]), revers_byte(Dout[1][0]), revers_byte(Dout[2][0]), revers_byte(Dout[3][0]));
-	$display("%h%h%h%h", revers_byte(Dout[4][0]), revers_byte(Dout[0][1]), revers_byte(Dout[1][1]), revers_byte(Dout[2][1]));
-	$sformat(line_out, "%h%h%h%h", revers_byte(Dout[0][0]), revers_byte(Dout[1][0]), revers_byte(Dout[2][0]), revers_byte(Dout[3][0]));
-	// $fwrite(file_out, "%s\n", line_out);
-	// $fclose(file_out);
-	# 10 $stop;
 endtask
 	
 endmodule 
