@@ -87,11 +87,16 @@ logic ARESETn_reg;
 logic read;
 
 bit [WIDTH-1:0] queue [$];
+
 int queue_length;
 
 int status;
 
 localparam mem   = "test.mem";  // bitmap file
+
+int rcnt;
+
+logic [WIDTH-1:0] temp [0:1733];
 
 always #5 ACLK = !ACLK;
 
@@ -124,6 +129,9 @@ initial begin
 //    fd = $fopen("test.bin","r");
     if (fd) $display("Success :%d", fd);
     else    $display("Error :%d", fd);
+
+    rcnt = 0;
+
 end
 
 // Перевод размера SHA в сигнал
@@ -249,10 +257,10 @@ always @(posedge ACLK) begin
     end
 end
 
-// Working version
+// // Working version
 
-task readfile;
 logic [WIDTH-1:0] data;
+task readfile;
     queue.delete();
     DEST = 0;
     how_to_last = 0;
@@ -268,8 +276,8 @@ endtask
 
 // Exeperimental readmemh
 
-// task readfile;
 // logic [WIDTH-1:0] data;
+// task readfile;
 // logic [WIDTH-1:0] memory [0:1023];
 //     queue.delete();
 //     DEST = 0;
@@ -283,8 +291,8 @@ endtask
 
 // not working version 
 
-// task readfile;
 // logic [15:0] data;
+// task readfile;
 // automatic byte unsigned byte_data[2];
 //     while (!$feof(fd)) begin
 //         byte_data[0] = $fgetc(fd); // Читаем старший байт
@@ -292,6 +300,45 @@ endtask
 //         data = {byte_data[0], byte_data[1]}; // Соединяем байты в 16-битное значение
 //         queue.push_back(data); // Записываем данные в очередь
 //         $display("Я дурак, который не видит конец файла", $time);
+//     end
+//     $fclose(fd);
+// endtask
+
+// Попытка чтения в несколько заходов
+
+// logic [WIDTH-1:0] data;
+
+// always begin
+//     while (!$feof(fd) || rcnt < SHA/WIDTH) begin
+//         status = $fread (data,fd);
+//         $display("Status: %h, data: %h",status, data, $time);
+//         queue.push_back(data); // Записываем данные в очередь
+//         rcnt = rcnt+1;
+//     end
+//     rcnt = 0;
+//     #1000;
+// end
+
+// Попробовать читать за 1 раз больше, а потом рассортировывать в queue//
+
+// все равно даль 1881 задыхается
+
+// logic [15:0] data;
+// task readfile;
+//     queue.delete();
+//     DEST = 0;
+//     how_to_last = 0;
+//     rcnt = 0;
+//     while (!$feof(fd)) begin
+//         status = $fread (temp,fd);
+//             while (rcnt < 1024) begin
+//                 data = temp[rcnt];
+//                 $display("Status: %h, data: %h",status, data, $time);
+//                 queue.push_back(data); // Записываем данные в очередь
+//                 rcnt = rcnt + 1;
+//             end
+//         rcnt = 0;
+//         $display("cycle, $feof(fd) : %b", $feof(fd), $time);
 //     end
 //     $fclose(fd);
 // endtask
