@@ -168,45 +168,6 @@ initial begin
     readfile;
 end
 
-//Чтение бинарного файла
-// Добавить счетчик до какого момента можно отправлять, проверку когда заново считывать
-
-// Рабочий вариант
-
-// always @(posedge(ACLK)) begin
-//     if (TREADY == 1'b1 && !$feof(fd)) begin
-//         if (!$feof(fd)) begin
-//             $fgets(line, fd);
-//             $display("line : %h", line, $time);
-//             in_data = line;
-//         end
-//         if ($feof(fd)) begin
-//             ID = 1'b1;
-//             how_to_last = 1'b1;     // Добавить расчет last block заранее 
-//             #50                     // TODO: починить костыль
-//             ID = 1'b0;
-//         end
-//     end
-// end
-
-// экспериментальный
-
-// always @(posedge(ACLK)) begin
-//     if (TREADY == 1'b1 && !$feof(fd)) begin
-//         if (!$feof(fd)) begin
-//             $fgets(line, fd);
-//             $display("line : %h", line, $time);
-//             in_data = line;
-//         end
-//         if ($feof(fd)) begin
-//             ID = 1'b1;
-//             how_to_last = 1'b1;     // Добавить расчет last block заранее 
-//             #50                     // TODO: починить костыль
-//             ID = 1'b0;
-//         end
-//     end
-// end
-
 always @(posedge(ACLK)) begin
         TREADY_reg = TREADY;
 end
@@ -263,39 +224,32 @@ always @(posedge ACLK) begin
     end
 end
 
-// working version 
-
-// logic [15:0] data;
-// byte  byte_data[2];
-// task readfile;
-//     queue.delete();
-//     DEST = 0;
-//     how_to_last = 0;
-//     while (!$feof(fd)) begin
-//         byte_data[0] = $fgetc(fd); // Читаем старший байт
-//         byte_data[1] = $fgetc(fd); // Читаем младший байт
-//         data = {byte_data[0], byte_data[1]}; // Соединяем байты в 16-битное значение
-//         queue.push_back(data); // Записываем данные в очередь
-//     end
-//     $fclose(fd);
-// endtask
-
-logic [15:0] data;
-byte unsigned byte_data[2];
-byte  byte_data[2];
+logic [WIDTH-1:0] data;
+byte byte_data[(WIDTH/8)];
 task readfile;
-    $display("task time", $time);
     queue.delete();
     DEST = 255;
     how_to_last = 0;
     while (!$feof(fd)) begin
-        byte_data[1] = $fgetc(fd); // Читаем старший байт
-        byte_data[0] = $fgetc(fd); // Читаем младший байт
-        data = {byte_data[0], byte_data[1]}; // Соединяем байты в 16-битное значение
+        for (i = 0; i < (WIDTH/8); i++) begin
+            byte_data[i] = $fgetc(fd);
+            $display("i: %d", i);
+        end
+        loader;
         queue.push_back(data); // Записываем данные в очередь
     end
     queue_length = queue.size();
     $fclose(fd);
+endtask
+
+task loader;
+    case (WIDTH/8)
+    1 :    data = byte_data[0];
+    2 :    data = {byte_data[1], byte_data[0]};
+    4 :    data = {byte_data[3], byte_data[2], byte_data[1], byte_data[0]};
+    8 :    data = {byte_data[7], byte_data[6], byte_data[5], byte_data[4], byte_data[3], byte_data[2], byte_data[1], byte_data[0]};
+    default :    data = {byte_data[0], byte_data[1]};
+    endcase
 endtask
 
 task print_2;
