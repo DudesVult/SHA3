@@ -71,7 +71,7 @@ AXI_SHA AXI_SHA_i(.*);
 logic [7:0] DEST;
 logic [4:0] cnt_cd;
 
-logic [1:0] TID_o;
+logic TID_o;
 logic [3:0] TUSER_o;
 logic TKEEP_o;
 logic TSTRB_o;
@@ -84,6 +84,7 @@ logic TREADY_reg;
 logic TVALID_o_reg;
 
 logic ARESETn_reg;
+logic ARESETn_assert;
 logic read;
 
 bit [WIDTH-1:0] queue [$];
@@ -119,17 +120,6 @@ initial begin
     i = 8'b0;
     DEST = 0;
     cnt_cd = 0;
-
-    // Открытие файла и проверка 
-
-//    fd = $fopen("Copilot.bin","r");
-    fd = $fopen("1600.bin","r");
-//    fd = $fopen("order.bin","r");
-//    fd = $fopen("test.docx","r");
-//    fd = $fopen("test.bin","r");
-    if (fd) $display("Success :%d", fd);
-    else    $display("Error :%d", fd);
-
     rcnt = 0;
 
 end
@@ -147,6 +137,7 @@ initial begin
 end
 
 initial begin
+    ARESETn_assert = 1'b0;
     #50 ARESETn = 1'b0;
     #50 ARESETn = 1'b1;
 end
@@ -155,6 +146,7 @@ always @(posedge ACLK) begin
     if (ARESETn_reg != ARESETn && ARESETn_reg == 1'b0) begin
         ARESETn_reg <= ARESETn;
         read = 1'b1;
+        #20 ARESETn_assert = 1'b1;
     end
     else if (ARESETn_reg != ARESETn && ARESETn_reg == 1'b1) begin
         ARESETn_reg <= ARESETn;
@@ -163,8 +155,18 @@ always @(posedge ACLK) begin
     else read = 1'b0;
 end
 
-always @(posedge read)
+initial begin
+    // Открытие файла и проверка 
+
+    //    fd = $fopen("Copilot.bin","r");
+    // fd = $fopen("1600.bin","r");
+    fd = $fopen("order.bin","r");
+    //    fd = $fopen("test.docx","r");
+    //    fd = $fopen("test.bin","r");
+    if (fd) $display("Success :%d", fd);
+    else    $display("Error :%d", fd);
     readfile;
+end
 
 //Чтение бинарного файла
 // Добавить счетчик до какого момента можно отправлять, проверку когда заново считывать
@@ -210,13 +212,17 @@ always @(posedge(ACLK)) begin
 end
 
 always @(posedge(ACLK)) begin
-    if (TREADY_reg == 1'b1) begin
+    if (TREADY_reg == 1'b1 && ARESETn_assert == 1'b1) begin
         if(DEST < ((1600 - SHA*2)/WIDTH) - 1) begin // Видимо где-то здесь ошибка
             if (queue_length >= 1) begin
                 in_data = queue.pop_front();
                 queue_length = queue.size();
             end
             if (queue_length == 0) begin
+                in_data = 0;
+                DEST = DEST;
+            end
+            if (queue_length == 0 && TID_o == 1'b1) begin
                 in_data = 0;
                 ID = 1'b1;
                 how_to_last = 1'b1;     // Добавить расчет last block заранее 
@@ -259,19 +265,36 @@ end
 
 // working version 
 
+// logic [15:0] data;
+// byte  byte_data[2];
+// task readfile;
+//     queue.delete();
+//     DEST = 0;
+//     how_to_last = 0;
+//     while (!$feof(fd)) begin
+//         byte_data[0] = $fgetc(fd); // Читаем старший байт
+//         byte_data[1] = $fgetc(fd); // Читаем младший байт
+//         data = {byte_data[0], byte_data[1]}; // Соединяем байты в 16-битное значение
+//         queue.push_back(data); // Записываем данные в очередь
+//     end
+//     $fclose(fd);
+// endtask
+
 logic [15:0] data;
+byte unsigned byte_data[2];
 byte  byte_data[2];
 task readfile;
+    $display("task time", $time);
     queue.delete();
-    DEST = 0;
+    DEST = 255;
     how_to_last = 0;
     while (!$feof(fd)) begin
-        byte_data[0] = $fgetc(fd); // Читаем старший байт
-        byte_data[1] = $fgetc(fd); // Читаем младший байт
+        byte_data[1] = $fgetc(fd); // Читаем старший байт
+        byte_data[0] = $fgetc(fd); // Читаем младший байт
         data = {byte_data[0], byte_data[1]}; // Соединяем байты в 16-битное значение
         queue.push_back(data); // Записываем данные в очередь
-        $display("Я дурак, который не видит конец файла", $time);
     end
+    queue_length = queue.size();
     $fclose(fd);
 endtask
 

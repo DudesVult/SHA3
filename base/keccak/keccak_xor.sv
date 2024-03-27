@@ -6,9 +6,10 @@ module keccak_xor #(parameter WIDTH = 64)(
     input                  				Last_block,
 	
     output                 				Ready,
+	output logic						KEEP,
     output  [0:4][0:4][WIDTH-1:0] 		Dout,
-	 output	[4:0]								cnt,
-	 output reg	[47:0]						txstate);
+	output	[4:0]						cnt,
+	output reg	[47:0]					txstate);
 		
 logic [0:4][0:4][WIDTH-1:0]	reg_data, reg_out, RND_IN, RND_OUT, Xin, Xout,D, XOR_REG;
 logic [255:0]   					reg_data_vector;
@@ -61,17 +62,20 @@ always @(posedge clk)
 			RST:	  begin
 				  cnt_rnd               = 5'd0;
 				  reg_ready 			<= '0;
+				  KEEP					<= 1'b0;
 				end
 
 			INIT_D:	  begin
 				  cnt_rnd               = 5'd0;
 				  reg_data 				<= Din;
+				  KEEP					<= 1'b0;
 				end
 
 			PROC:	  begin
 				  cnt_rnd       		<= cnt_rnd + 1;
 				  reg_data              <= RND_OUT;
 				  reg_out				<= reg_data;
+				  KEEP					<= 1'b0;
 				  if (cnt_rnd == 23)
 					XOR_REG 			<= RND_OUT;
 				end
@@ -81,12 +85,15 @@ always @(posedge clk)
 					  Xout				<= XOR_REG;
 					  reg_data 			<= D;
 					  cnt_rnd           <= 5'd0;
+					  KEEP				<= 1'b1;
+
 				end
 
 			OUT: begin
 					  reg_out			<=	XOR_REG;
 					  reg_ready 		<= '1;
-					  cnt_rnd           <= 5'd0;					  
+					  cnt_rnd           <= 5'd0;
+					  KEEP				<= 1'b1;					  
 				end
 
 	endcase

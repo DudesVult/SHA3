@@ -21,7 +21,7 @@ module AXI_SHA #(
     ,input Mode
     ,output Last
     ,output TREADY
-    ,output [1:0] TID_o
+    ,output TID_o
     ,output [3:0] TUSER_o
     ,output TKEEP_o
     ,output TSTRB_o
@@ -62,6 +62,8 @@ logic VALID;
 logic [7:0] DEST_reg;
 logic [7:0] DEST_o;
 logic ID_o;
+
+logic KEEP;
 
 /*  SHA_Mode    */
 
@@ -137,6 +139,7 @@ keccak_xor keccak_xor_i(
     .Din_valid(SHA_valid),
     .Last_block(TLAST),
     .Ready(Ready),
+    .KEEP(KEEP),
     .Dout(D_reg),
     .cnt(cnt),
     .txstate(txstate)
@@ -161,7 +164,7 @@ Axi_Stream_Transmitter Axi_Stream_Transmitter_o(
     .in_data(Mode_out),
     .how_to_last(Last),
     .USER(TUSER),
-    .ID(TID),
+    .ID(KEEP),
     .TKEEP(TKEEP_o),
     .TSTRB(TSTRB_o),
     .TID(TID_o),
