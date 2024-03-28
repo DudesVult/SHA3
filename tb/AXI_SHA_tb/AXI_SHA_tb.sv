@@ -97,6 +97,9 @@ localparam mem   = "test.mem";  // bitmap file
 
 int rcnt;
 
+int len;
+int cnt_l;
+
 logic [WIDTH-1:0] temp [0:1733];
 
 always #5 ACLK = !ACLK;
@@ -121,6 +124,7 @@ initial begin
     DEST = 0;
     cnt_cd = 0;
     rcnt = 0;
+    cnt_l = 0;
 
 end
 
@@ -159,10 +163,10 @@ initial begin
     // Открытие файла и проверка 
 
     //    fd = $fopen("Copilot.bin","r");
-    // fd = $fopen("1600.bin","r");
-    fd = $fopen("order.bin","r");
+    fd = $fopen("1600.bin","r");
+    // fd = $fopen("order.bin","r");
     //    fd = $fopen("test.docx","r");
-    //    fd = $fopen("test.bin","r");
+    //    fd = $fopen("test_1.bin","r");
     if (fd) $display("Success :%d", fd);
     else    $display("Error :%d", fd);
     readfile;
@@ -230,10 +234,13 @@ task readfile;
     queue.delete();
     DEST = 255;
     how_to_last = 0;
-    while (!$feof(fd)) begin
+    len = $fgetc(fd);
+    // while (!$feof(fd)) begin
+    while (cnt_l < len) begin
         for (i = 0; i < (WIDTH/8); i++) begin
             byte_data[i] = $fgetc(fd);
-            $display("i: %d", i);
+            // $display("i: %d", i);
+            cnt_l = cnt_l + 1;
         end
         loader;
         queue.push_back(data); // Записываем данные в очередь
