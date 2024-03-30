@@ -90,14 +90,21 @@ int queue_length;
 
 int status;
 
-localparam mem   = "test.mem";  // bitmap file
-
 int rcnt;
 
 int len;
 int cnt_l;
 
-logic [WIDTH-1:0] temp [0:1733];
+// AXI tx logic
+
+logic [(WIDTH/8)-1:0] TKEEP_i;
+logic [(WIDTH/8)-1:0] TSTRB_i;
+logic [7:0] TDEST_i;
+logic  [1:0] TUSER_i; //[2:0] for byte_numb
+logic  TID_i;
+logic  TVALID_i;
+logic  TLAST_i;
+logic  [WIDTH-1:0] TDATA_i;
 
 always #5 ACLK = !ACLK;
 
@@ -207,6 +214,51 @@ always @(posedge(ACLK)) begin
             #20;
         end
     end
+end
+
+// AXI TX
+
+logic [1:0] state;
+
+localparam int 	IDLE  = 0,  WAIT_READY   = 1,	DATA_OUT   = 2, TLAST_iUT   = 3;
+
+always_ff @(posedge ACLK) begin
+	if (~ARESETn) state <= IDLE;
+	else
+		case(state)
+            IDLE: begin
+                TVALID_i <= 1'b0;
+                TLAST_i <= 1'b0;
+                TUSER_i <= 2'b0;
+                TID_i   <= 1'b0;
+                TKEEP_i <= 2'b0;
+                TSTRB_i <= 0;
+                TDEST_i <= 0;
+                TDATA_i <= '0;
+                if (ARESETn) state <= WAIT_READY;
+            end
+            WAIT_READY: begin
+                TVALID_i <= VALID_i;
+                TDEST_i <= DEST;
+                if (TREADY) state <= DATA_OUT;
+            end
+            DATA_OUT: begin
+                TDATA_i <= in_data;
+                TUSER_i <= USER;
+                TID_i <= ID;
+                TVALID_i <= VALID_i;
+                TDEST_i <= DEST;
+                if (TREADY && ~how_to_last) state <= DATA_OUT;
+                else state <= TLAST_iUT;
+            end
+            TLAST_iUT: begin
+                TLAST_i <= 1'b1;
+                TID_i <= ID;
+                if (~how_to_last) state <= WAIT_READY;
+            end
+            default:
+              state <= IDLE;
+		endcase
 end
 
 always @(posedge ACLK) 

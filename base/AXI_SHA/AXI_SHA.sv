@@ -7,12 +7,17 @@ module AXI_SHA #(
 (
     input   ACLK,
     input   ARESETn,
-    input   [3:0] USER,
-    input   [1:0] ID,
-    input   [DATA_WIDTH-1:0] in_data,
-    input   how_to_last,
-    input   VALID_i,
-    input   [7:0] DEST,
+
+    input [(DATA_WIDTH/8)-1:0] TKEEP_i,
+    input [(DATA_WIDTH/8)-1:0] TSTRB_i,
+    input [7:0] TDEST_i,
+    input  [1:0] TUSER_i, //[2:0] for byte_numb
+    input  TID_i, // �?спользовать для загрузки в регистр?
+    input  TVALID_i,
+    input  TLAST_i,
+    input  [DATA_WIDTH-1:0] TDATA_i,
+
+
     output  [DATA_WIDTH-1:0] out_data,
     output  [4:0][4:0][63:0] Dout
     // ,output logic VALID
@@ -36,8 +41,7 @@ logic [(DATA_WIDTH/8)-1:0] TSTRB;
 logic TID;
 logic [7:0] TDEST;
 logic TVALID;
-logic TLAST;
-logic [1:0] TUSER;
+logic TLAST_i;
 logic [DATA_WIDTH-1:0] TDATA;
 
 logic [DATA_WIDTH-1:0] p_Data;
@@ -67,43 +71,18 @@ logic KEEP;
 
 /*  SHA_Mode    */
 
-//logic Ready;
-
-// assign VALID = TVALID;
-
-Axi_Stream_Transmitter Axi_Stream_Transmitter_i(
-    .ACLK(ACLK),
-    .ARESETn(ARESETn),
-    .TREADY(TREADY),
-    .VALID(VALID_i),
-    .in_data(in_data),
-    .DEST(DEST),
-    .how_to_last(how_to_last),
-    .USER(USER),
-    .ID(ID),
-    .TKEEP(TKEEP),
-    .TSTRB(TSTRB),
-    .TID(TID),
-    .TDEST(TDEST),
-    .TUSER(TUSER),
-    .TVALID(TVALID),
-    .TLAST(TLAST),
-    .TDATA(TDATA),
-    .txstate(txstate_tx)  
-);
-
 Axi_Stream_Receiver Axi_Stream_Receiver_i (
     .ACLK(ACLK),
     .ARESETn(ARESETn),
     .TREADY(TREADY),
-    .TKEEP(TKEEP),
-    .TSTRB(TSTRB),
-    .TID(TID),
-    .TDEST(TDEST),
-    .TUSER(TUSER),
-    .TVALID(TVALID),
-    .TLAST(TLAST),
-    .TDATA(TDATA),
+    .TKEEP(TKEEP_i),
+    .TSTRB(TSTRB_i),
+    .TID(TID_i),
+    .TDEST(TDEST_i),
+    .TUSER(TUSER_i),
+    .TVALID(TVALID_i),
+    .TLAST(TLAST_i),
+    .TDATA(TDATA_i),
     .txstate(txstate_rx),
     .out_data(out_data),
     .VALID_reg(VALID_reg)
@@ -115,19 +94,19 @@ AXI_reg AXI_reg_i(
     .ACLK(ACLK),
     .ARESETn(ARESETn),
     .TDEST(DEST_reg),
-    .TVALID(TVALID),     //VALID_reg
-    .data_in(TDATA),     // out_data
+    .TVALID(TVALID_i),     //VALID_reg
+    .data_in(TDATA_i),     // out_data
     .D_out(reg_out),          // D_out
-    .TLAST(TLAST),
+    .TLAST(TLAST_i),
     .TID(ID_o)
-    ,.TUSER(TUSER)
+    ,.TUSER(TUSER_i)
     ,.VALID(SHA_valid)
 );
 
 padding padding_i(
     .ACLK(ACLK),
-    .TLAST(TLAST),
-    .TUSER(TUSER),    
+    .TLAST(TLAST_i),
+    .TUSER(TUSER_i),    
     .D_in(reg_out),
     .D_out(D_out)    
     );
@@ -137,7 +116,7 @@ keccak_xor keccak_xor_i(
     .nrst(ARESETn),
     .Din(D_out),
     .Din_valid(SHA_valid),
-    .Last_block(TLAST),
+    .Last_block(TLAST_i),
     .Ready(Ready),
     .KEEP(KEEP),
     .Dout(D_reg),
@@ -147,7 +126,7 @@ keccak_xor keccak_xor_i(
 
 SHA_mode SHA_mode_i(
     .ACLK(ACLK),
-    .TUSER(TUSER), 
+    .TUSER(TUSER_i), 
     .Din(D_reg), 
     .Ready(Ready),
     .Mode(Mode),
@@ -163,7 +142,7 @@ Axi_Stream_Transmitter Axi_Stream_Transmitter_o(
     .VALID(VALID),
     .in_data(Mode_out),
     .how_to_last(Last),
-    .USER(TUSER),
+    .USER(TUSER_i),
     .ID(KEEP),
     .TKEEP(TKEEP_o),
     .TSTRB(TSTRB_o),
