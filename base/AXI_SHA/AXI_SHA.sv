@@ -19,21 +19,20 @@ module AXI_SHA #(
 
 
     output  [DATA_WIDTH-1:0] out_data,
-    output  [4:0][4:0][63:0] Dout
     // ,output logic VALID
-    ,output Ready
+    output Ready,
     // ,input SHA_valid
-    ,input Mode
-    ,output Last
-    ,output TREADY
-    ,output TID_o
-    ,output [3:0] TUSER_o
-    ,output TKEEP_o
-    ,output TSTRB_o
-    ,output TDEST_o
-    ,output TVALID_o
-    ,output TLAST_o
-    ,output [DATA_WIDTH-1:0] TDATA_o
+    input Mode,
+    output Last,
+    output TREADY,
+    output TID_o,
+    output [3:0] TUSER_o,
+    output TKEEP_o,
+    output TSTRB_o,
+    output TDEST_o,
+    output TVALID_o,
+    output TLAST_o,
+    output [DATA_WIDTH-1:0] TDATA_o
 );
 
 logic [(DATA_WIDTH/8)-1:0] TKEEP;
@@ -41,7 +40,6 @@ logic [(DATA_WIDTH/8)-1:0] TSTRB;
 logic TID;
 logic [7:0] TDEST;
 logic TVALID;
-logic TLAST_i;
 logic [DATA_WIDTH-1:0] TDATA;
 
 logic [DATA_WIDTH-1:0] p_Data;
@@ -154,7 +152,5 @@ Axi_Stream_Transmitter Axi_Stream_Transmitter_o(
     .TDATA(TDATA_o)
     ,.txstate(txstate_tx_0)  
 );    
-
-assign Dout = D_reg;
 
 endmodule

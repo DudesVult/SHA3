@@ -11,9 +11,8 @@ module SHA_mode #(
     input Ready,
     input Mode,
     output logic [DATA_WIDTH-1:0] Dout,
-    output logic Last 
-    ,output logic VALID
-//    ,output logic Valid_mode
+    output logic Last, 
+    output logic VALID
     );
 
    logic [7:0] cnt;
@@ -32,6 +31,8 @@ always_ff @(posedge ACLK) begin
         3:  lite_lim = 512/DATA_WIDTH;
         default: lite_lim = 256/DATA_WIDTH;
         endcase
+    else
+        lite_lim = 0;
 end   
 
 always_ff @(posedge ACLK) begin
@@ -50,15 +51,15 @@ always_ff @(posedge ACLK) begin
             cnt = cnt + 1;
         else
             cnt = -1;
-        reg_Last = Last;
+            reg_Last = Last; // Связанный костыль
     end
 end
 
 generate
     for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
         always @(posedge ACLK) begin
-            if (cnt == i+1)
-                Dout = Dreg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i];
+            if (cnt == i+1)                                                         // Связанный костыль
+                Dout = (Ready == 1) ? Dreg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] : 0;
         end
     end
 endgenerate
@@ -69,7 +70,7 @@ endgenerate
      for(genvar j = 1; j<26; j++) begin
          always @(posedge ACLK) begin
              if (cnt == j-1)
-                rev = Din [(25-j)%5] [(25-j)/5];
+                rev = (Ready == 0) ? 64'b0 : Din [(25-j)%5] [(25-j)/5];
                 rev = ((rev<<8)   & 64'hFF00FF00FF00FF00)|((rev>>8)  & 64'h00FF00FF00FF00FF);
                 Dreg [64*j-1:64*(j-1)] = (cnt == j-1) ? rev : Dreg [64*j-1:64*(j-1)];
             end
