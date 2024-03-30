@@ -12,17 +12,11 @@ module keccak_xor #(parameter WIDTH = 64)(
 	output reg	[47:0]					txstate);
 		
 logic [0:4][0:4][WIDTH-1:0]	reg_data, reg_out, RND_IN, RND_OUT, Xin, Xout,D, XOR_REG;
-logic [255:0]   					reg_data_vector;
-logic [4:0]     					cnt_rnd;
-logic           					din_buffer_full;
-logic [4:0]			   			RCS;
-logic           					permutation_computed;
-logic									reg_ready;
-logic									reg_cnt;
+logic [4:0]	cnt_rnd;
+logic [4:0]	RCS;
+logic		reg_ready;
 
-logic	[4:0]							count;
-
-logic 	[2:0] 					state, nextstate;
+logic 	[2:0] 	state, nextstate;
 	 
 genvar x,i,col,row;
 

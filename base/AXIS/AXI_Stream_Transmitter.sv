@@ -26,7 +26,6 @@ module Axi_Stream_Transmitter #(
 );
 
 logic [1:0] state;
-logic [DATA_WIDTH-1:0] data_reg;
 
 localparam int 	IDLE  = 0,  WAIT_READY   = 1,	DATA_OUT   = 2, TLAST_OUT   = 3;
 

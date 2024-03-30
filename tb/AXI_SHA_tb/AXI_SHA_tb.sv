@@ -50,9 +50,8 @@ logic Ready;
 localparam FILE_IN   = "Copilot.bin";
 localparam FILE_OUT      = "output.txt";
 
-integer result;
-integer file_in, file_out;
-string  line_in, line_out;
+integer file_out;
+string  line_out;
 
 int j;
 
@@ -61,8 +60,6 @@ wire   [0:4][0:4][63:0]  	Dout;
 logic [(1600/WIDTH)-1:0][WIDTH-1:0] D_result;
 logic [1599-1:0] Dres;
 logic [7:0] cnt;
-
-logic [15:0] line;
 
 int fd; // file descriptor
 
@@ -228,26 +225,47 @@ always @(posedge ACLK) begin
     end
 end
 
+// Версия с чтением конца файла из самого файла
+
+// logic [WIDTH-1:0] data;
+// byte byte_data[(WIDTH/8)];
+// task readfile;
+//     queue.delete();
+//     DEST = 255;
+//     how_to_last = 0;
+//     len = $fgetc(fd);
+//     // while (!$feof(fd)) begin
+//     while (cnt_l < len) begin
+//         for (i = 0; i < (WIDTH/8); i++) begin
+//             byte_data[i] = $fgetc(fd);
+//             // $display("i: %d", i);
+//             cnt_l = cnt_l + 1;
+//         end
+//         loader;
+//         queue.push_back(data); // Записываем данные в очередь
+//     end
+//     queue_length = queue.size();
+//     $fclose(fd);
+// endtask
+
+// Версия для неподготовленных файлов
+
 logic [WIDTH-1:0] data;
 byte byte_data[(WIDTH/8)];
 task readfile;
     queue.delete();
     DEST = 255;
     how_to_last = 0;
-    len = $fgetc(fd);
-    // while (!$feof(fd)) begin
-    while (cnt_l < len) begin
-        for (i = 0; i < (WIDTH/8); i++) begin
-            byte_data[i] = $fgetc(fd);
-            // $display("i: %d", i);
-            cnt_l = cnt_l + 1;
-        end
-        loader;
+    while (!$feof(fd)) begin
+        byte_data[1] = $fgetc(fd); // Читаем старший байт
+        byte_data[0] = $fgetc(fd); // Читаем младший байт
+        data = {byte_data[1], byte_data[0]}; // Соединяем байты в 16-битное значение
         queue.push_back(data); // Записываем данные в очередь
     end
     queue_length = queue.size();
     $fclose(fd);
 endtask
+
 
 task loader;
     case (WIDTH/8)
