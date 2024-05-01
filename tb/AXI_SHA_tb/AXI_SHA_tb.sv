@@ -1,28 +1,10 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 29.02.2024 20:42:36
-// Design Name: 
-// Module Name: AXI_SHA_tb
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
 // `include "test.mem"
 
 module AXI_SHA_tb();
-localparam WIDTH = 16;
+localparam DATA_WIDTH = 16;
+localparam clock_period = 10; //ns
 
 localparam SHA = 512;
 
@@ -34,10 +16,10 @@ logic VALID_i;
 
 logic TREADY;
 
-logic [15:0] in_data;
-logic how_to_last;
+logic [DATA_WIDTH-1:0] in_data;
+logic Last_i;
 
-logic [15:0] out_data;
+logic [DATA_WIDTH-1:0] out_data;
 logic [7:0] i;
 
 // logic SHA_valid;
@@ -52,9 +34,7 @@ localparam FILE_OUT      = "output.txt";
 integer file_out;
 string  line_out;
 
-int j;
-
-logic [(1600/WIDTH)-1:0][WIDTH-1:0] D_result;
+logic [(1600/DATA_WIDTH)-1:0][DATA_WIDTH-1:0] D_result;
 logic [1599-1:0] Dres;
 logic [7:0] cnt;
 
@@ -72,7 +52,7 @@ logic TSTRB_o;
 logic TDEST_o;
 logic TVALID_o;
 logic TLAST_o;
-logic [WIDTH-1:0] TDATA_o;
+logic [DATA_WIDTH-1:0] TDATA_o;
 
 logic TREADY_reg;
 logic TVALID_o_reg;
@@ -81,11 +61,7 @@ logic ARESETn_reg;
 logic ARESETn_assert;
 logic read;
 
-bit [WIDTH-1:0] queue [$];
-
-int queue_length;
-
-int status;
+bit [DATA_WIDTH-1:0] queue [$];
 
 int rcnt;
 
@@ -94,18 +70,18 @@ int cnt_l;
 
 // AXI tx logic
 
-logic [(WIDTH/8)-1:0] TKEEP_i;
-logic [(WIDTH/8)-1:0] TSTRB_i;
+logic [(DATA_WIDTH/8)-1:0] TKEEP_i;
+logic [(DATA_WIDTH/8)-1:0] TSTRB_i;
 logic [7:0] TDEST_i;
-logic  [1:0] TUSER_i; //[2:0] for byte_numb
+logic  [1:0] TUSER_i;
 logic  TID_i;
 logic  TVALID_i;
 logic  TLAST_i;
-logic  [WIDTH-1:0] TDATA_i;
+logic  [DATA_WIDTH-1:0] TDATA_i;
 
 always #5 ACLK = !ACLK;
 
-// –ù–∞—á–∞–ª—å–Ω—ã–µ –∑–Ω–∞—á–µ–Ω–∏—è
+// Initial values
 
 initial begin
 
@@ -114,10 +90,8 @@ initial begin
     ARESETn_reg = 1'b1;
     VALID_i = 1'b1;
     in_data = 16'd0;
-    how_to_last = 1'b0;
-    // USER = 2'd0;		// –ï—â–µ –∏—Å–ø–æ–ª—å–∑—É–µ—Ç—Å—è? –ú–± –ø–µ—Ä–µ–Ω–µ—Å—Ç–∏ ID —Å—é–¥–∞ 
+    Last_i = 1'b0;
     ID = 1'b0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
-    // SHA_valid = 1'b0;
 	Mode = 1'b1;
 	cnt = 8'b0;
     
@@ -129,7 +103,7 @@ initial begin
 
 end
 
-// –ü–µ—Ä–µ–≤–æ–¥ —Ä–∞–∑–º–µ—Ä–∞ SHA –≤ —Å–∏–≥–Ω–∞–ª
+// Transform SHA version to USER
 
 initial begin
     case(SHA)
@@ -161,13 +135,7 @@ always @(posedge ACLK) begin
 end
 
 initial begin
-    // –û—Ç–∫—Ä—ã—Ç–∏–µ —Ñ–∞–π–ª–∞ –∏ –ø—Ä–æ–≤–µ—Ä–∫–∞ 
-
-    //    fd = $fopen("Copilot.bin","r");
     fd = $fopen("1600.bin","r");
-    // fd = $fopen("order.bin","r");
-    //    fd = $fopen("test.docx","r");
-    //    fd = $fopen("test_1.bin","r");
     if (fd) $display("Success :%d", fd);
     else    $display("Error :%d", fd);
     readfile;
@@ -179,27 +147,27 @@ end
 
 always @(posedge(ACLK)) begin
     if (TREADY_reg == 1'b1 && ARESETn_assert == 1'b1) begin
-        if(DEST < ((1600 - SHA*2)/WIDTH) - 1) begin // –í–∏–¥–∏–º–æ –≥–¥–µ-—Ç–æ –∑–¥–µ—Å—å –æ—à–∏–±–∫–∞
-            if (queue_length >= 1) begin
+        if(DEST < ((1600 - SHA*2)/DATA_WIDTH) - 1) begin
+            if (queue.size() >= 1) begin
                 in_data = queue.pop_front();
-                queue_length = queue.size();
+                DEST = DEST + 1;
             end
-            if (queue_length == 0) begin
+            if (queue.size() == 0) begin
                 in_data = 0;
-                DEST = DEST;
+                rcnt = 1;
+                DEST = ((1600 - SHA*2)/DATA_WIDTH) - 1;
+                #clock_period;
             end
-            if (queue_length == 0 && TID_o == 1'b1) begin
-                in_data = 0;
+            if (rcnt == 1 && TID_o == 1'b1) begin
+                in_data = 16'h8000;
                 ID = 1'b1;
-                how_to_last = 1'b1;     // –î–æ–±–∞–≤–∏—Ç—å —Ä–∞—Å—á–µ—Ç last block –∑–∞—Ä–∞–Ω–µ–µ 
+                Last_i = 1'b1;
                 #50                     
                 ID = 1'b0;
-                queue_length = queue.size();
                 DEST = 255;
             end
-            DEST = DEST + 1;
             cnt_cd = 0;
-            $display("queue_length: %d , cnt: %d, data: %h", queue_length, DEST, in_data, $time);
+            $display("queue.size(): %d , cnt: %d, data: %h", queue.size(), DEST, in_data, $time);
         end
         else if (DEST == 255)
             DEST = 0;
@@ -217,7 +185,7 @@ end
 
 logic [1:0] state;
 
-localparam int 	IDLE  = 0,  WAIT_READY   = 1,	DATA_OUT   = 2, TLAST_iUT   = 3;
+localparam int 	IDLE  = 0,  WAIT_READY   = 1,	DATA_OUT   = 2, TLAST_OUT   = 3;
 
 always_ff @(posedge ACLK) begin
 	if (~ARESETn) state <= IDLE;
@@ -235,7 +203,7 @@ always_ff @(posedge ACLK) begin
                 if (ARESETn) state <= WAIT_READY;
             end
             WAIT_READY: begin
-                TVALID_i <= VALID_i;
+                TVALID_i <= 1;
                 TDEST_i <= DEST;
                 if (TREADY) state <= DATA_OUT;
             end
@@ -243,15 +211,15 @@ always_ff @(posedge ACLK) begin
                 TDATA_i <= in_data;
                 TUSER_i <= USER;
                 TID_i <= ID;
-                TVALID_i <= VALID_i;
+                TVALID_i <= 1;
                 TDEST_i <= DEST;
-                if (TREADY && ~how_to_last) state <= DATA_OUT;
-                else state <= TLAST_iUT;
+                if (TREADY && ~Last_i) state <= DATA_OUT;
+                else state <= TLAST_OUT;
             end
-            TLAST_iUT: begin
+            TLAST_OUT: begin
                 TLAST_i <= 1'b1;
                 TID_i <= ID;
-                if (~how_to_last) state <= WAIT_READY;
+                if (~Last_i) state <= WAIT_READY;
             end
             default:
               state <= IDLE;
@@ -269,57 +237,65 @@ always @(posedge ACLK) begin
     if (TVALID_o_reg == 1'b1 &&  TLAST_o == 1'b1) begin
         cnt = cnt + 1;
         D_result [cnt-1] = TDATA_o;
-        print_2;
+        print_term;
         #20 $stop;
     end
 end
 
-// –í–µ—Ä—Å–∏—è —Å —á—Ç–µ–Ω–∏–µ–º –∫–æ–Ω—Ü–∞ —Ñ–∞–π–ª–∞ –∏–∑ —Å–∞–º–æ–≥–æ —Ñ–∞–π–ª–∞
+// version for prepared data
 
-// logic [WIDTH-1:0] data;
-// byte byte_data[(WIDTH/8)];
+// logic [DATA_WIDTH-1:0] data;
+// byte byte_data[(DATA_WIDTH/8)];
 // task readfile;
 //     queue.delete();
 //     DEST = 255;
-//     how_to_last = 0;
+//     Last_i = 0;
 //     len = $fgetc(fd);
 //     // while (!$feof(fd)) begin
 //     while (cnt_l < len) begin
-//         for (i = 0; i < (WIDTH/8); i++) begin
+//         for (i = 0; i < (DATA_WIDTH/8); i++) begin
 //             byte_data[i] = $fgetc(fd);
 //             // $display("i: %d", i);
 //             cnt_l = cnt_l + 1;
 //         end
 //         loader;
-//         queue.push_back(data); // –ó–∞–ø–∏—Å—ã–≤–∞–µ–º –¥–∞–Ω–Ω—ã–µ –≤ –æ—á–µ—Ä–µ–¥—å
+//         queue.push_back(data); // Write data to file
 //     end
-//     queue_length = queue.size();
+//     queue.size() = queue.size();
 //     $fclose(fd);
 // endtask
 
-// –í–µ—Ä—Å–∏—è –¥–ª—è –Ω–µ–ø–æ–¥–≥–æ—Ç–æ–≤–ª–µ–Ω–Ω—ã—Ö —Ñ–∞–π–ª–æ–≤
+// version for raw data
 
-logic [WIDTH-1:0] data;
-byte byte_data[(WIDTH/8)];
+logic [DATA_WIDTH-1:0] data;
+byte byte_data[(DATA_WIDTH/8)];
 task readfile;
     queue.delete();
     DEST = 255;
-    how_to_last = 0;
-    while (!$feof(fd)) begin        // Loop –≤ questasim
-        byte_data[1] = $fgetc(fd); 
-        byte_data[0] = $fgetc(fd); 
+    Last_i = 0;
+    while (!$feof(fd)) begin        // Loop in questasim
+        reader;
         loader;
         queue.push_back(data); 
         #1;
     end
-    queue_length = queue.size();
     $fclose(fd);
     #100;
 endtask
 
+// œÓ·‡ÈÚÓ‚ÓÂ ˜ÚÂÌËÂ Ù‡ÈÎ‡ Ò ‰‡ÌÌ˚ÏË ‰Îˇ ÍÓÚÓ˚ı ÌÛÊÌÓ ÔÓÎÛ˜ËÚ¸ ı˝¯ 
+
+task reader;
+    for (int i = 1; i <= DATA_WIDTH/8; i++) begin
+        byte_data[(DATA_WIDTH/8)-i] = $fgetc(fd);
+        $display("REader test", $time);
+    end
+endtask
+
+// Œ·˙Â‰ËÌÂÌËÂ ·‡ÈÚ ‚ ÒÎÓ‚Ó ‡ÁÏÂÓÏ DATA_WIDTH
 
 task loader;
-    case (WIDTH/8)
+    case (DATA_WIDTH/8)
     1 :    data = byte_data[0];
     2 :    data = {byte_data[1], byte_data[0]};
     4 :    data = {byte_data[3], byte_data[2], byte_data[1], byte_data[0]};
@@ -328,10 +304,12 @@ task loader;
     endcase
 endtask
 
-task print_2;
+// ¬˚‚Ó‰ËÚ ÁÌ‡˜ÂÌËÂ SHA ‚ ÚÂÏËÌ‡Î
+
+task print_term;
     file_out = $fopen(FILE_OUT, "w");
 //    $display("Result: %h", D_result [i]);
-    for (int i = 0; i<SHA/WIDTH; i++) begin
+    for (int i = 0; i<SHA/DATA_WIDTH; i++) begin
         $display("%h", D_result [i]);
         $sformat(line_out, "%h", D_result [i]);
         $fwrite(file_out, "%s", line_out);
@@ -339,7 +317,9 @@ task print_2;
     $fclose(file_out);
 endtask
 
-task print_3;
+// ¬˚‚Ó‰ËÚ ÁÌ‡˜ÂÌËÂ SHA ‚ Ù‡ÈÎ
+
+task print_file;
     file_out = $fopen(FILE_OUT, "w");
     begin
     if (Mode == 1'b0) begin 

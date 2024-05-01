@@ -6,10 +6,8 @@ module AXI_reg #(
 (
     input ACLK,
     input ARESETn,
-    input TVALID,
     input TLAST,
     input TID,
-    input [1:0] TUSER,
     input [DATA_WIDTH-1:0] data_in,
     input [7:0] TDEST,
 
@@ -18,11 +16,6 @@ module AXI_reg #(
     );
 
 logic [1599:0] D_reg;
-logic [7:0] cnt;
-
-logic [9:0] SHA;
-
-logic refresh_reg;
 
 always_ff @(posedge ACLK)
     VALID <= TID; 
@@ -31,7 +24,7 @@ generate
     for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
         always @(negedge ACLK) begin
             if(TLAST != 1'b1)
-                D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (ARESETn == 1'b0 || TDEST == 255) ? 0 : ((TDEST == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]); // cnt-1 if using padder
+                D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (ARESETn == 1'b0 || TDEST == 255) ? 0 : ((TDEST == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]);
         end
     end
 endgenerate

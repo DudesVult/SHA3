@@ -7,9 +7,7 @@ parameter ROUND = 24; //
 input	 [4:0] RCS;
 input  [0:4][0:4][WIDTH-1:0] RND_IN;
 
-output [0:4][0:4][WIDTH-1:0] RND_OUT; //В онлайне выводит 64 хекса
-
-//"А не много ли регов?"
+output [0:4][0:4][WIDTH-1:0] RND_OUT;
 
 reg [0:4][0:4][WIDTH-1:0] 		A;
 reg [0:4][0:4][WIDTH-1:0] 		B;
@@ -18,17 +16,15 @@ reg [0:4][WIDTH-1:0] 			D;
 
 reg [0:4][0:4][WIDTH-1:0] 		A_reg;
 
-reg [0:4][0:4]	 					r;
 reg [0:23][WIDTH-1:0]			RC;
 
 reg [0:4][0:4][WIDTH-1:0] 		rho_out;
 reg [0:4][0:4][WIDTH-1:0] 		theta_out;
 
-genvar i, x, y;
+genvar x, y;
 
 assign  A  = RND_IN;		
 						
-
 //Rotation Constant
 assign RC[0]  = 64'h0000000000000001;	
 assign RC[1]  = 64'h0000000000008082;	

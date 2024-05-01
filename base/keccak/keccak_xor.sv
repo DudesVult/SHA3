@@ -8,18 +8,14 @@ module keccak_xor #(parameter WIDTH = 64)(
     output                 				Ready,
 	output logic						KEEP,
     output  [0:4][0:4][WIDTH-1:0] 		Dout,
-	output	[4:0]						cnt,
 	output reg	[47:0]					txstate);
 		
-logic [0:4][0:4][WIDTH-1:0]	reg_data, reg_out, RND_IN, RND_OUT, Xin, Xout,D, XOR_REG;
+logic [0:4][0:4][WIDTH-1:0]	reg_data, reg_out, RND_IN, RND_OUT, Xin, Xout, D, XOR_REG;
 logic [4:0]	cnt_rnd;
 logic [4:0]	RCS;
 logic		reg_ready;
 
 logic 	[2:0] 	state, nextstate;
-	 
-genvar x,i,col,row;
-
 localparam RST = 0, INIT_D = 1, PROC = 2, XOR = 3, OUT = 4;
 
 always @(state) begin
@@ -141,7 +137,6 @@ end
 assign RND_IN 	= reg_data;
 assign Dout 	= reg_out;
 assign RCS 		= cnt_rnd;
-assign cnt 		= cnt_rnd;
 assign Ready 	= reg_ready;
 
 endmodule 

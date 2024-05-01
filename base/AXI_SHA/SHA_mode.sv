@@ -51,14 +51,14 @@ always_ff @(posedge ACLK) begin
             cnt = cnt + 1;
         else
             cnt = -1;
-            reg_Last = Last; // Связанный костыль
+            reg_Last = Last; // bounded
     end
 end
 
 generate
     for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
         always @(posedge ACLK) begin
-            if (cnt == i+1)                                                         // Связанный костыль
+            if (cnt == i+1)                                                         // Bounded
                 Dout = (Ready == 1) ? Dreg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] : 0;
         end
     end
