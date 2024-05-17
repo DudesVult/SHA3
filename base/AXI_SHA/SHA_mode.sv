@@ -23,9 +23,9 @@ module SHA_mode #(
    logic [63:0] rev2; 
    logic [63:0] rev3; 
    logic [63:0] rev4; 
+   logic [63:0] rev; 
    
    logic reg_Last;
-   logic valid_q;
       
 always_ff @(posedge ACLK) begin
     if (Ready == 1'b1)
@@ -41,10 +41,8 @@ always_ff @(posedge ACLK) begin
 end   
 
 always_ff @(posedge ACLK) begin
-    if (Ready == 1'b0) begin
+    if (Ready == 1'b0) 
         cnt1 <= -1;
-        Last <= 1'b0;
-    end
     else
         cnt1 <= cnt1 + 1;
 end
@@ -86,17 +84,27 @@ endgenerate
 
 // byte_reversal in HW
 
- generate
-     for(genvar j = 1; j<26; j++) begin
-         always @(posedge ACLK) begin
-             if (cnt1 == j-1)
-                rev1 <= (Ready == 0) ? 64'b0 : Din [(25-j)%5] [(25-j)/5];
-                rev2 <= ((rev1<<8)   & 64'hFF00FF00FF00FF00)|((rev1>>8)  & 64'h00FF00FF00FF00FF);
-//                rev3 <= ((rev2<<16)   & 64'hFFFF0000FFFF0000)|((rev2>>16)  & 64'h0000FFFF0000FFFF);
-//                rev4 <= ((rev3<<32)   & 64'hFFFFFFFF00000000)|((rev3>>32)  & 64'h00000000FFFFFFFF);
-                Dreg [64*j-1:64*(j-1)] <= (cnt1 == j+1) ? rev2 : Dreg [64*j-1:64*(j-1)];
-            end
-     end
- endgenerate
+always_ff @(posedge ACLK) begin 
+    case (DATA_WIDTH)
+        8:  rev <= rev1;
+        16: rev <= rev2;
+        32: rev <= rev3;
+        64: rev <= rev4;
+        default: rev <= rev2;
+    endcase
+end  
+
+generate
+    for(genvar j = 1; j<26; j++) begin
+        always @(posedge ACLK) begin
+            if (cnt1 == j-1)
+            rev1 <= (Ready == 0) ? 64'b0 : Din [(25-j)%5] [(25-j)/5];
+            rev2 <= ((rev1<<8)   & 64'hFF00FF00FF00FF00)|((rev1>>8)  & 64'h00FF00FF00FF00FF);
+            rev3 <= ((rev2<<16)   & 64'hFFFF0000FFFF0000)|((rev2>>16)  & 64'h0000FFFF0000FFFF);
+            rev4 <= ((rev3<<32)   & 64'hFFFFFFFF00000000)|((rev3>>32)  & 64'h00000000FFFFFFFF);
+            Dreg [64*j-1:64*(j-1)] <= (cnt1 == j+2) ? rev : Dreg [64*j-1:64*(j-1)];
+        end
+    end
+endgenerate
     
 endmodule
