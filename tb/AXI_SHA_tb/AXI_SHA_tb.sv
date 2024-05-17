@@ -6,7 +6,7 @@ module AXI_SHA_tb();
 localparam DATA_WIDTH = 16;
 localparam clock_period = 6; //ns
 
-localparam SHA = 256;
+localparam SHA = 512;
 
 logic ACLK;
 logic ARESETn;
@@ -238,7 +238,7 @@ always @(posedge ACLK) begin
         cnt = cnt - 1;
         D_result [cnt+1] = TDATA_o;
 //        print_term;
-        $display("Рассчитаный хэш : %h", D_result [(1600/DATA_WIDTH)-1:(1600/DATA_WIDTH)-(SHA/DATA_WIDTH)-1]);
+        $display("Рассчитаный хэш : %h", D_result [(1600/DATA_WIDTH)-1:(1600/DATA_WIDTH)-(SHA/DATA_WIDTH)]);
         #20 $stop;
     end
 end
