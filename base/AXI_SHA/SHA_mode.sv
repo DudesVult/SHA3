@@ -18,7 +18,7 @@ module SHA_mode #(
    logic [7:0] cnt1;
    logic [7:0] cnt2;
    logic [1599:0] Dreg;
-   logic [5:0] lite_lim;
+   logic [7:0] lite_lim;
    logic [63:0] rev1; 
    logic [63:0] rev2; 
    logic [63:0] rev3; 
@@ -41,10 +41,8 @@ always_ff @(posedge ACLK) begin
 end   
 
 always_ff @(posedge ACLK) begin
-    if (Ready == 1'b0) begin
+    if (Ready == 1'b0)
         cnt1 <= -1;
-        Last <= 1'b0;
-    end
     else
         cnt1 <= cnt1 + 1;
 end
@@ -56,6 +54,7 @@ always_ff @(posedge ACLK) begin
         VALID <= 1'b0;
     end
     else if(cnt1 > 3) begin 
+        VALID <= 1'b1;
         if (Mode == 1'b1)
             if (cnt2 == lite_lim-1) 
                 Last <= 1'b1;
@@ -70,17 +69,9 @@ always_ff @(posedge ACLK) begin
     end
 end
 
-always_ff @(posedge ACLK) begin
-    if (cnt1 == 4)
-        VALID <= 1'b1;
-end
-
 generate
     for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
-        always @(posedge ACLK) begin
-            if (cnt2 == i)                                                         // Bounded
-                Dout <= (Ready == 1) ? Dreg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] : 0;
-        end
+              assign  Dout = (cnt2 == i && Ready == 1) ? Dreg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] : 0;
     end
 endgenerate
 
@@ -89,12 +80,12 @@ endgenerate
  generate
      for(genvar j = 1; j<26; j++) begin
          always @(posedge ACLK) begin
-             if (cnt1 == j-1)
-                rev1 <= (Ready == 0) ? 64'b0 : Din [(25-j)%5] [(25-j)/5];
-                rev2 <= ((rev1<<8)   & 64'hFF00FF00FF00FF00)|((rev1>>8)  & 64'h00FF00FF00FF00FF);
+             if (cnt1 == j-1 && Ready == 0)
+                rev1 <= Din [(25-j)%5] [(25-j)/5];
+//                rev2 <= ((rev1<<8)   & 64'hFF00FF00FF00FF00)|((rev1>>8)  & 64'h00FF00FF00FF00FF);
 //                rev3 <= ((rev2<<16)   & 64'hFFFF0000FFFF0000)|((rev2>>16)  & 64'h0000FFFF0000FFFF);
 //                rev4 <= ((rev3<<32)   & 64'hFFFFFFFF00000000)|((rev3>>32)  & 64'h00000000FFFFFFFF);
-                Dreg [64*j-1:64*(j-1)] <= (cnt1 == j+1) ? rev2 : Dreg [64*j-1:64*(j-1)];
+                Dreg [64*j-1:64*(j-1)] <= (cnt1 == j+2) ? rev1 : Dreg [64*j-1:64*(j-1)];
             end
      end
  endgenerate
