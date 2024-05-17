@@ -72,6 +72,8 @@ endgenerate
              if (cnt == j-1)
                 rev = (Ready == 0) ? 64'b0 : Din [(25-j)%5] [(25-j)/5];
                 rev = ((rev<<8)   & 64'hFF00FF00FF00FF00)|((rev>>8)  & 64'h00FF00FF00FF00FF);
+//                rev = ((rev<<16)   & 64'hFFFF0000FFFF0000)|((rev>>16)  & 64'h0000FFFF0000FFFF);
+//                rev = ((rev<<32)   & 64'hFFFFFFFF00000000)|((rev>>32)  & 64'h00000000FFFFFFFF);
                 Dreg [64*j-1:64*(j-1)] = (cnt == j-1) ? rev : Dreg [64*j-1:64*(j-1)];
             end
      end

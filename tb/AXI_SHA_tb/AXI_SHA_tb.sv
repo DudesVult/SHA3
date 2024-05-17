@@ -4,9 +4,9 @@
 
 module AXI_SHA_tb();
 localparam DATA_WIDTH = 16;
-localparam clock_period = 10; //ns
+localparam clock_period = 6; //ns
 
-localparam SHA = 512;
+localparam SHA = 256;
 
 logic ACLK;
 logic ARESETn;
@@ -28,7 +28,7 @@ logic Last;
 
 logic Ready;
 
-localparam FILE_IN   = "Copilot.bin";
+localparam FILE_IN   = "1600.bin"; //"1600.bin";
 localparam FILE_OUT      = "output.txt";
 
 integer file_out;
@@ -79,7 +79,7 @@ logic  TVALID_i;
 logic  TLAST_i;
 logic  [DATA_WIDTH-1:0] TDATA_i;
 
-always #5 ACLK = !ACLK;
+always #(clock_period/2) ACLK = !ACLK;
 
 // Initial values
 
@@ -93,7 +93,7 @@ initial begin
     Last_i = 1'b0;
     ID = 1'b0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
 	Mode = 1'b1;
-	cnt = 8'b0;
+	cnt = (1600/DATA_WIDTH)-1;
     
     i = 8'b0;
     DEST = 0;
@@ -135,7 +135,7 @@ always @(posedge ACLK) begin
 end
 
 initial begin
-    fd = $fopen("1600.bin","r");
+    fd = $fopen(FILE_IN,"r");
     if (fd) $display("Success :%d", fd);
     else    $display("Error :%d", fd);
     readfile;
@@ -152,7 +152,7 @@ always @(posedge(ACLK)) begin
                 in_data = queue.pop_front();
                 DEST = DEST + 1;
             end
-            if (queue.size() == 0) begin
+             if (queue.size() == 0) begin
                 in_data = 0;
                 rcnt = 1;
                 DEST = ((1600 - SHA*2)/DATA_WIDTH) - 1;
@@ -171,12 +171,12 @@ always @(posedge(ACLK)) begin
         end
         else if (DEST == 255)
             DEST = 0;
-        else begin
+        else if (TUSER_o[1] == 1'b1) begin
             in_data = queue.pop_front();
             ID = 1'b1;
-            #50 ID = 1'b0;
-            #20 DEST = 255;
-            #20;
+            #(2*clock_period) ID = 1'b0;
+            #clock_period DEST = 255;
+            #clock_period;
         end
     end
 end
@@ -231,13 +231,14 @@ always @(posedge ACLK)
 
 always @(posedge ACLK) begin
     if (TVALID_o_reg == 1'b1 && TLAST_o == 1'b0) begin
-        cnt = cnt + 1;
-        D_result [cnt-1] = TDATA_o;
+        cnt = cnt - 1;
+        D_result [cnt+1] = TDATA_o;
     end
     if (TVALID_o_reg == 1'b1 &&  TLAST_o == 1'b1) begin
-        cnt = cnt + 1;
-        D_result [cnt-1] = TDATA_o;
-        print_term;
+        cnt = cnt - 1;
+        D_result [cnt+1] = TDATA_o;
+//        print_term;
+        $display("Рассчитаный хэш : %h", D_result [(1600/DATA_WIDTH)-1:(1600/DATA_WIDTH)-(SHA/DATA_WIDTH)-1]);
         #20 $stop;
     end
 end
@@ -277,7 +278,7 @@ task readfile;
         reader;
         loader;
         queue.push_back(data); 
-        #1;
+        $display("data: %h", data);
     end
     $fclose(fd);
     #100;
@@ -287,8 +288,10 @@ endtask
 
 task reader;
     for (int i = 1; i <= DATA_WIDTH/8; i++) begin
-        byte_data[(DATA_WIDTH/8)-i] = $fgetc(fd);
-        $display("REader test", $time);
+        if(!$feof(fd))
+            byte_data[(DATA_WIDTH/8)-i] = $fgetc(fd);
+        else
+            byte_data[(DATA_WIDTH/8)-i] = 8'b0;
     end
 endtask
 

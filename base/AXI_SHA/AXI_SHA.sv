@@ -50,6 +50,8 @@ logic ID_o;
 logic SHA_valid;
 logic KEEP;
 
+logic [3:0] Done;
+
 Axi_Stream_Receiver #(DATA_WIDTH) Axi_Stream_Receiver_i(
     .ACLK(ACLK),
     .ARESETn(ARESETn),
@@ -87,7 +89,9 @@ keccak_xor keccak_xor_i(
     .Last_block(TLAST_i),
     .Ready(Ready),
     .KEEP(KEEP),
-    .Dout(D_reg)
+    .Dout(D_reg),
+    .Done(Done[1]),
+	.pre_Done(Done[0])
 );
 
 SHA_mode #(DATA_WIDTH) SHA_mode_i(
@@ -108,7 +112,7 @@ Axi_Stream_Transmitter #(DATA_WIDTH) Axi_Stream_Transmitter_o(
     .VALID(VALID),
     .in_data(Mode_out),
     .Last(Last),
-    .USER(TUSER_i),
+    .USER(Done),
     .ID(KEEP),
     .TKEEP(TKEEP_o),
     .TSTRB(TSTRB_o),
