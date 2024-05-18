@@ -17,12 +17,8 @@ module SHA_mode #(
 
    logic [7:0] cnt1;
    logic [7:0] cnt2;
-   logic [1599:0] Dreg;
    logic [7:0] lite_lim;
-   logic [63:0] rev1; 
-   logic [63:0] rev2; 
-   logic [63:0] rev3; 
-   logic [63:0] rev4; 
+   logic [1599:0] Dreg;
    
    logic reg_Last;
    logic valid_q;
@@ -41,10 +37,12 @@ always_ff @(posedge ACLK) begin
 end   
 
 always_ff @(posedge ACLK) begin
-    if (Ready == 1'b0)
+    if (Ready == 1'b0) begin
         cnt1 <= -1;
-    else
+    end
+    else begin
         cnt1 <= cnt1 + 1;
+    end
 end
 
 always_ff @(posedge ACLK) begin
@@ -53,8 +51,36 @@ always_ff @(posedge ACLK) begin
         Last <= 1'b0;
         VALID <= 1'b0;
     end
+    if (cnt1 == 0) begin
+        Dreg [63:0]       <=  Din [0][0];
+        Dreg [127:64]     <=  Din [1][0];
+        Dreg [191:128]    <=  Din [2][0];
+        Dreg [255:192]    <=  Din [3][0];
+        Dreg [319:256]    <=  Din [4][0];
+        Dreg [383:320]    <=  Din [0][1];
+        Dreg [447:384]    <=  Din [1][1];
+        Dreg [511:448]    <=  Din [2][1];
+        Dreg [575:512]    <=  Din [3][1];
+        Dreg [639:576]    <=  Din [4][1];
+        Dreg [703:640]    <=  Din [0][2];
+        Dreg [767:704]    <=  Din [1][2];
+        Dreg [831:768]    <=  Din [2][2];
+        Dreg [895:832]    <=  Din [3][2];
+        Dreg [959:896]    <=  Din [4][2];
+        Dreg [1023:960]   <=  Din [0][3];
+        Dreg [1087:1024]  <=  Din [1][3];
+        Dreg [1151:1088]  <=  Din [2][3];
+        Dreg [1215:1152]  <=  Din [3][3];
+        Dreg [1279:1216]  <=  Din [4][3];
+        Dreg [1343:1280]  <=  Din [0][4];
+        Dreg [1407:1344]  <=  Din [1][4];
+        Dreg [1471:1408]  <=  Din [2][4];
+        Dreg [1535:1472]  <=  Din [3][4];
+        Dreg [1599:1536]  <=  Din [4][4];
+    end
     else if(cnt1 > 3) begin 
         VALID <= 1'b1;
+        Dreg <= {{DATA_WIDTH{1'b0}}, Dreg[1600-DATA_WIDTH-1:DATA_WIDTH]};
         if (Mode == 1'b1)
             if (cnt2 == lite_lim-1) 
                 Last <= 1'b1;
@@ -69,25 +95,6 @@ always_ff @(posedge ACLK) begin
     end
 end
 
-generate
-    for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
-              assign  Dout = (cnt2 == i && Ready == 1) ? Dreg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] : 0;
-    end
-endgenerate
-
-// byte_reversal in HW
-
- generate
-     for(genvar j = 1; j<26; j++) begin
-         always @(posedge ACLK) begin
-             if (cnt1 == j-1 && Ready == 0)
-                rev1 <= Din [(25-j)%5] [(25-j)/5];
-//                rev2 <= ((rev1<<8)   & 64'hFF00FF00FF00FF00)|((rev1>>8)  & 64'h00FF00FF00FF00FF);
-//                rev3 <= ((rev2<<16)   & 64'hFFFF0000FFFF0000)|((rev2>>16)  & 64'h0000FFFF0000FFFF);
-//                rev4 <= ((rev3<<32)   & 64'hFFFFFFFF00000000)|((rev3>>32)  & 64'h00000000FFFFFFFF);
-                Dreg [64*j-1:64*(j-1)] <= (cnt1 == j+2) ? rev1 : Dreg [64*j-1:64*(j-1)];
-            end
-     end
- endgenerate
+assign Dout = Dreg [15:0];
     
 endmodule
