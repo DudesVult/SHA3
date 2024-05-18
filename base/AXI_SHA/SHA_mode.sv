@@ -78,9 +78,10 @@ always_ff @(posedge ACLK) begin
         Dreg [1535:1472]  <=  Din [3][4];
         Dreg [1599:1536]  <=  Din [4][4];
     end
-    else if(cnt1 > 3) begin 
+    else if(cnt1 > 3 && cnt1 != 255) begin 
         VALID <= 1'b1;
-        Dreg <= {{DATA_WIDTH{1'b0}}, Dreg[1600-DATA_WIDTH-1:DATA_WIDTH]};
+        if (cnt2 != 255)
+            Dreg <= Dreg << DATA_WIDTH;
         if (Mode == 1'b1)
             if (cnt2 == lite_lim-1) 
                 Last <= 1'b1;
@@ -95,6 +96,6 @@ always_ff @(posedge ACLK) begin
     end
 end
 
-assign Dout = Dreg [15:0];
+assign Dout = Dreg [1599:1600-DATA_WIDTH];
     
 endmodule
