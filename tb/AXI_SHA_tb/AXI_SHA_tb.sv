@@ -3,10 +3,10 @@
 // `include "test.mem"
 
 module AXI_SHA_tb();
-localparam DATA_WIDTH = 16;
-localparam clock_period = 6; //ns
+localparam DATA_WIDTH = 32;
+localparam clock_period = 5.5; //ns
 
-localparam SHA = 512;
+localparam SHA = 384;
 
 logic ACLK;
 logic ARESETn;
@@ -37,6 +37,7 @@ string  line_out;
 logic [(1600/DATA_WIDTH)-1:0][DATA_WIDTH-1:0] D_result;
 logic [1599-1:0] Dres;
 logic [7:0] cnt;
+logic [7:0] cnt2;
 
 int fd; // file descriptor
 
@@ -78,6 +79,7 @@ logic  TID_i;
 logic  TVALID_i;
 logic  TLAST_i;
 logic  [DATA_WIDTH-1:0] TDATA_i;
+logic  [24:0][63:0] Dtmp;
 
 always #(clock_period/2) ACLK = !ACLK;
 
@@ -93,7 +95,8 @@ initial begin
     Last_i = 1'b0;
     ID = 1'b0;              // 0 - SHA3-224, 1 - SHA3-256, 2 - SHA3-384, 3 - SHA3-512
 	Mode = 1'b1;
-	cnt = (1600/DATA_WIDTH)-1;
+	cnt = 0;
+	cnt2 = 24;
     
     i = 8'b0;
     DEST = 0;
@@ -159,7 +162,7 @@ always @(posedge(ACLK)) begin
                 #clock_period;
             end
             if (rcnt == 1 && TID_o == 1'b1) begin
-                in_data = 16'h8000;
+                in_data = 32'h8000_0000;
                 ID = 1'b1;
                 Last_i = 1'b1;
                 #50                     
@@ -231,14 +234,26 @@ always @(posedge ACLK)
 
 always @(posedge ACLK) begin
     if (TVALID_o_reg == 1'b1 && TLAST_o == 1'b0) begin
-        cnt = cnt - 1;
-        D_result [cnt+1] = TDATA_o;
+        cnt = cnt + 1;
+        read_hash(TDATA_o, cnt, cnt2);
+        // Dtmp [cnt2][cnt*DATA_WIDTH-1:(cnt-1)*DATA_WIDTH] = TDATA_o;
+        // if (cnt == 64/DATA_WIDTH) begin
+        //     cnt = 0; 
+        //     Dtmp [cnt2] = reverse_byte(Dtmp [cnt2]);
+        //     cnt2 = cnt2 - 1;
+        // end
     end
     if (TVALID_o_reg == 1'b1 &&  TLAST_o == 1'b1) begin
-        cnt = cnt - 1;
-        D_result [cnt+1] = TDATA_o;
+        cnt = cnt + 1;
+        read_hash(TDATA_o, cnt, cnt2);
+        // Dtmp [cnt2][cnt*DATA_WIDTH-1:(cnt-1)DATA_WIDTH] = TDATA_o;
+        // if (cnt == 64/DATA_WIDTH) begin
+        //     cnt = 0; 
+        //     Dtmp [cnt2] = reverse_byte(Dtmp [cnt2]);
+        //     cnt2 = cnt2 - 1;
+        // end
 //        print_term;
-        $display("Рассчитаный хэш : %h", D_result [(1600/DATA_WIDTH)-1:(1600/DATA_WIDTH)-(SHA/DATA_WIDTH)]);
+        print_file;
         #20 $stop;
     end
 end
@@ -284,6 +299,52 @@ task readfile;
     #100;
 endtask
 
+//read final hash
+
+function logic [63:0] read_hash (logic [63:0] TDATA_o, count, count2); 
+begin
+    case(DATA_WIDTH)
+    8: begin
+            if (count == 1) begin Dtmp [count2][63:56]  = TDATA_o; end
+            if (count == 2) begin Dtmp [count2][55:48]  = TDATA_o; end
+            if (count == 3) begin Dtmp [count2][47:40]  = TDATA_o; end
+            if (count == 4) begin Dtmp [count2][39:32]  = TDATA_o; end
+            if (count == 5) begin Dtmp [count2][31:24]  = TDATA_o; end
+            if (count == 6) begin Dtmp [count2][23:16]  = TDATA_o; end
+            if (count == 7) begin Dtmp [count2][15:8]   = TDATA_o; end
+            if (count == 8) begin Dtmp [count2][7:0]    = TDATA_o; Dtmp [count2] = revers_byte(Dtmp [count2]); cnt = 0; cnt2 = cnt2 - 1; end
+        end
+    16: begin
+            if (count == 1) begin Dtmp [count2][63:48]  = TDATA_o; end
+            if (count == 2) begin Dtmp [count2][47:32]  = TDATA_o; end
+            if (count == 3) begin Dtmp [count2][31:16]  = TDATA_o; end
+            if (count == 4) begin Dtmp [count2][15:0]   = TDATA_o; Dtmp [count2] = revers_byte(Dtmp [count2]); cnt = 0; cnt2 = cnt2 - 1; end
+        end
+    32: begin
+            if (count == 1) begin Dtmp [count2][63:32]  = TDATA_o; end
+            if (count == 2) begin Dtmp [count2][31:0]   = TDATA_o; Dtmp [count2] = revers_byte(Dtmp [count2]); cnt = 0; cnt2 = cnt2 - 1; end
+        end
+    64: begin
+            if (count == 1) begin Dtmp [count2] = TDATA_o; Dtmp [count2] = revers_byte(Dtmp [count2]); cnt = 0; cnt2 = cnt2 - 1; end
+        end
+    endcase
+end
+endfunction
+
+// reverse byte order
+
+function logic [63:0] revers_byte(logic [63:0] data);
+	logic [63:0] res;
+
+	begin
+		res = data;
+		res = ((res<<32)  & 64'hFFFFFFFF00000000)|((res>>32) & 64'h00000000FFFFFFFF);
+		res = ((res<<16)  & 64'hFFFF0000FFFF0000)|((res>>16) & 64'h0000FFFF0000FFFF);
+		res = ((res<<8)   & 64'hFF00FF00FF00FF00)|((res>>8)  & 63'h00FF00FF00FF00FF);
+		return res;
+	end
+endfunction  
+
 // Побайтовое чтение файла с данными для которых нужно получить хэш 
 
 task reader;
@@ -326,25 +387,25 @@ task print_file;
     file_out = $fopen(FILE_OUT, "w");
     begin
     if (Mode == 1'b0) begin 
-        $display("Result: %h", Dres [1599:0]);
-        $sformat(line_out, "%h", Dres [1599:0]); 
+        $display("Рассчитаный хэш: %h", Dtmp [24:0]);
+        $sformat(line_out, "%h", Dtmp [24:0]); 
     end
     else begin
         if (USER == 2'b00) begin 
-            $display("Result: %h", Dres [223:0]);
-            $sformat(line_out, "%h", Dres [223:0]); 
+            $display("Рассчитаный хэш: %h%h", Dtmp [24:22], Dtmp [21][63:32]);
+            $sformat(line_out, "%h%h", Dtmp [24:20], Dtmp [21][63:32]); 
         end
         if (USER == 2'b01) begin 
-            $display("Result: %h", Dres [255:0]);
-            $sformat(line_out, "%h", Dres [255:0]); 
+            $display("Рассчитаный хэш: %h", Dtmp [24:21]);
+            $sformat(line_out, "%h", Dtmp [24:21]); 
         end
         if (USER == 2'b10) begin 
-            $display("Result: %h", Dres [383:0]);
-            $sformat(line_out, "%h", Dres [383:0]); 
+            $display("Рассчитаный хэш: %h", Dtmp [24:19]);
+            $sformat(line_out, "%h", Dtmp [24:19]); 
         end
         if (USER == 2'b11) begin 
-            $display("Result: %h", Dres [511:0]);
-            $sformat(line_out, "%h", Dres [511:0]); 
+            $display("Рассчитаный хэш: %h", Dtmp [24:17]);
+            $sformat(line_out, "%h", Dtmp [24:17]); 
         end
     end
     $fwrite(file_out, "%s\n", line_out);

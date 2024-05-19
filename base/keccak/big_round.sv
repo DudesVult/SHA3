@@ -52,7 +52,7 @@ assign RC[22] = 64'h0000000080000001;
 assign RC[23] = 64'h8000000080008008;
 
 function int ABS (int numberIn);
-  ABS = (numberIn < 0) ? -numberIn : numberIn;
+  ABS <= (numberIn < 0) ? -numberIn : numberIn;
 endfunction
 			
 //theta

@@ -24,7 +24,7 @@ generate
     for(genvar i = 0; i<(1600/DATA_WIDTH); i++) begin
         always @(negedge ACLK) begin
             if(TLAST != 1'b1)
-                D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] = (ARESETn == 1'b0 || TDEST == 255) ? 0 : ((TDEST == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]);
+                D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i] <= (ARESETn == 1'b0 || TDEST == 255) ? 0 : ((TDEST == i) ? data_in : D_reg [DATA_WIDTH*(i+1)-1:DATA_WIDTH*i]);
         end
     end
 endgenerate

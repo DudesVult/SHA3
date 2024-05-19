@@ -26,7 +26,7 @@ module SHA_mode #(
 always_ff @(posedge ACLK) begin
     if (Ready == 1'b1)
         case (TUSER)
-        0:  lite_lim <= 224/DATA_WIDTH;
+        0:  lite_lim <= 256/DATA_WIDTH;
         1:  lite_lim <= 256/DATA_WIDTH;
         2:  lite_lim <= 384/DATA_WIDTH;
         3:  lite_lim <= 512/DATA_WIDTH;

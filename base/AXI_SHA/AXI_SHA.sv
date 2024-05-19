@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module AXI_SHA #(
-	parameter DATA_WIDTH = 16
+	parameter DATA_WIDTH = 32
 )
 (
     input   ACLK,
